@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import CashierPage from "@/components/pages/cashier-page"
-import LoginPage from "@/components/pages/login-page"
+import dynamic from "next/dynamic"
+
+// Dynamically import components to avoid SSR issues with Zustand
+const CashierPage = dynamic(() => import("@/components/pages/cashier-page"), { ssr: false })
+const LoginPage = dynamic(() => import("@/components/pages/login-page"), { ssr: false })
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)

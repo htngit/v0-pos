@@ -1,5 +1,7 @@
 "use client"
 import { AlertTriangle, TrendingDown, Clock } from "lucide-react"
+// TODO: Import and use notificationStore for real notifications
+// import { useNotificationStore } from "@/lib/stores/notificationStore"
 
 const mockNotifications = [
   {

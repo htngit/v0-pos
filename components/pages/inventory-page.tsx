@@ -5,6 +5,7 @@ import MainLayout from "@/components/layout/main-layout"
 import StockList from "@/components/inventory/stock-list"
 import PurchaseInvoiceForm from "@/components/inventory/purchase-invoice-form"
 import StockOpnameForm from "@/components/inventory/stock-opname-form"
+import StockWasteForm from "@/components/inventory/stock-waste-form"
 import SupplierList from "@/components/inventory/supplier-list"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -13,6 +14,7 @@ import { Plus } from "lucide-react"
 export default function InventoryPage() {
   const [showInvoiceForm, setShowInvoiceForm] = useState(false)
   const [showOpnameForm, setShowOpnameForm] = useState(false)
+  const [showWasteForm, setShowWasteForm] = useState(false)
 
   return (
     <MainLayout>
@@ -24,10 +26,11 @@ export default function InventoryPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="stock" className="w-full">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="stock">Stock</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="opname">Opname</TabsTrigger>
+            <TabsTrigger value="waste">Waste</TabsTrigger>
             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
           </TabsList>
 
@@ -56,6 +59,17 @@ export default function InventoryPage() {
               </Button>
             </div>
             {showOpnameForm && <StockOpnameForm onClose={() => setShowOpnameForm(false)} />}
+          </TabsContent>
+
+          {/* Stock Waste Tab */}
+          <TabsContent value="waste" className="space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setShowWasteForm(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Record Waste
+              </Button>
+            </div>
+            {showWasteForm && <StockWasteForm onClose={() => setShowWasteForm(false)} />}
           </TabsContent>
 
           {/* Suppliers Tab */}

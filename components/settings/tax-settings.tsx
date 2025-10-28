@@ -1,30 +1,68 @@
 "use client"
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Label } from "@radix-ui/react-label";
+import { Save } from "lucide-react";
+import { useSettingsStore } from "@/lib/stores/settingsStore";
+import { useAuthStore } from "@/lib/stores/authStore";
+import { TaxSettings as TaxSettingsType } from "@/lib/types/settings";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Save } from "lucide-react"
+// Create a custom Checkbox component that matches the UI library pattern
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={`h-4 w-4 rounded border border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ${className}`}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
 export default function TaxSettings() {
-  const [settings, setSettings] = useState({
+  const { getSetting, updateSetting, isLoading } = useSettingsStore();
+  const { user } = useAuthStore();
+  const [settings, setSettings] = useState<TaxSettingsType>({
     taxEnabled: true,
     taxRate: 10,
     taxTiming: "after_discount", // 'before_discount' | 'after_discount' | 'included'
-  })
+  });
 
-  const handleChange = (field: string, value: any) => {
-    setSettings((prev) => ({ ...prev, [field]: value }))
-  }
+  // Load initial settings
+ useEffect(() => {
+    const initialSettings = getSetting('tax');
+    if (initialSettings) {
+      setSettings(initialSettings);
+    }
+  }, [getSetting]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Saving tax settings:", settings)
-  }
+  const handleChange = (field: keyof TaxSettingsType, value: any) => {
+    setSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    try {
+      await updateSetting('tax', settings, user.id);
+      // Show success notification could go here
+    } catch (error) {
+      console.error("Failed to save tax settings:", error);
+      // Show error notification could go here
+    }
+  };
 
   return (
     <Card>
@@ -37,7 +75,7 @@ export default function TaxSettings() {
           <label className="flex items-center gap-3 cursor-pointer">
             <Checkbox
               checked={settings.taxEnabled}
-              onCheckedChange={(checked) => handleChange("taxEnabled", checked)}
+              onCheckedChange={(checked: boolean) => handleChange("taxEnabled", checked)}
             />
             <span className="text-sm font-medium text-foreground">Enable Tax on Transactions</span>
           </label>
@@ -50,7 +88,7 @@ export default function TaxSettings() {
                 <Input
                   type="number"
                   min="0"
-                  max="100"
+                  max="10"
                   step="0.1"
                   value={settings.taxRate}
                   onChange={(e) => handleChange("taxRate", Number(e.target.value))}
@@ -108,9 +146,9 @@ export default function TaxSettings() {
           )}
 
           <div className="flex justify-end pt-4 border-t border-border">
-            <Button type="submit" className="gap-2 bg-primary hover:bg-primary/90">
+            <Button type="submit" className="gap-2 bg-primary hover:bg-primary/90" disabled={isLoading}>
               <Save className="w-4 h-4" />
-              Save Settings
+              {isLoading ? 'Saving...' : 'Save Settings'}
             </Button>
           </div>
         </form>

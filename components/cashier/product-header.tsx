@@ -8,6 +8,9 @@ import NotificationPanel from "@/components/notifications/notification-panel"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Search } from "lucide-react"
 import SpaceViewModal from "@/components/cashier/space-view-modal"
+// TODO: Import and use offline detection hooks
+// import { useOffline } from "@/lib/hooks/useOffline"
+// import { useAuthStore } from "@/lib/stores/authStore"
 
 interface ProductHeaderProps {
   searchQuery: string
