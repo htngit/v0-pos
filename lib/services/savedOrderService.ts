@@ -76,17 +76,19 @@ export class SavedOrderService {
       }
 
       // Prepare updated transaction data
-      const updatedTransaction = {
-        ...existingOrder,
-        ...updateData,
-        updatedAt: new Date()
-      };
+            const updatedTransaction = {
+              ...existingOrder,
+              ...updateData,
+              shiftId: updateData.shiftId !== undefined ? updateData.shiftId : existingOrder.shiftId, // Preserve shiftId if not explicitly updated
+              updatedAt: new Date()
+            };
 
       // Update in database
-      await db.transactions.update(id, {
-        ...updatedTransaction,
-        id: undefined // Don't update the id field
-      });
+            await db.transactions.update(id, {
+              ...updatedTransaction,
+              id: undefined, // Don't update the id field
+              shiftId: updatedTransaction.shiftId
+            });
       
       // Return updated transaction
       const updatedOrder = await db.transactions.get(id);
@@ -112,23 +114,25 @@ export class SavedOrderService {
       }
 
       // Update the transaction to be paid
-      const paidTransaction = {
-        ...savedOrder,
-        payments: [{ method: paymentMethod, amount: paymentAmount }],
-        change,
-        status: 'paid' as const,
-        paidAt: new Date(),
-        updatedAt: new Date()
-      };
+            const paidTransaction = {
+              ...savedOrder,
+              payments: [{ method: paymentMethod, amount: paymentAmount }],
+              change,
+              status: 'paid' as const,
+              paidAt: new Date(),
+              updatedAt: new Date(),
+              shiftId: savedOrder.shiftId // Preserve the shiftId
+            };
 
       // Update in database
-      await db.transactions.update(savedOrderId, {
-        payments: paidTransaction.payments,
-        change: paidTransaction.change,
-        status: paidTransaction.status,
-        paidAt: paidTransaction.paidAt,
-        updatedAt: paidTransaction.updatedAt
-      });
+            await db.transactions.update(savedOrderId, {
+              payments: paidTransaction.payments,
+              change: paidTransaction.change,
+              status: paidTransaction.status,
+              paidAt: paidTransaction.paidAt,
+              updatedAt: paidTransaction.updatedAt,
+              shiftId: paidTransaction.shiftId
+            });
 
       // Get the updated transaction
       const finalTransaction = await db.transactions.get(savedOrderId);

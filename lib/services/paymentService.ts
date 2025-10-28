@@ -54,25 +54,27 @@ export class PaymentService {
 
       // Update transaction with payment info
       const updatedTransaction = {
-        ...transaction,
-        payments: [...transaction.payments, payment],
-        change,
-        status: 'paid' as const,
-        paidAt: new Date(),
-        updatedAt: new Date()
-      };
+              ...transaction,
+              payments: [...transaction.payments, payment],
+              change,
+              status: 'paid' as const,
+              paidAt: new Date(),
+              updatedAt: new Date(),
+              shiftId: transaction.shiftId // Preserve the shiftId
+            };
 
       // Validate and clean the transaction data
       const cleanedData = this.cleanTransactionData(updatedTransaction);
 
       // Update in database
-      await db.transactions.update(transactionId, {
-        payments: cleanedData.payments,
-        change: cleanedData.change,
-        status: cleanedData.status,
-        paidAt: cleanedData.paidAt,
-        updatedAt: cleanedData.updatedAt
-      });
+            await db.transactions.update(transactionId, {
+              payments: cleanedData.payments,
+              change: cleanedData.change,
+              status: cleanedData.status,
+              paidAt: cleanedData.paidAt,
+              updatedAt: cleanedData.updatedAt,
+              shiftId: cleanedData.shiftId
+            });
 
       // Get the updated transaction
       const finalTransaction = await db.transactions.get(transactionId);
@@ -99,15 +101,16 @@ export class PaymentService {
   }
 
   // Helper function to clean transaction data
-  private static cleanTransactionData(data: any): Transaction {
-    return {
-      ...data,
-      customerId: data.customerId || null,
-      savedAt: data.savedAt || null,
-      paidAt: data.paidAt || null,
-      deletedAt: data.deletedAt || null,
-    };
-  }
+    private static cleanTransactionData(data: any): Transaction {
+      return {
+        ...data,
+        customerId: data.customerId || null,
+        shiftId: data.shiftId || null,
+        savedAt: data.savedAt || null,
+        paidAt: data.paidAt || null,
+        deletedAt: data.deletedAt || null,
+      };
+    }
 
   // Process multiple payment methods for a single transaction
  static async processMultiplePayments(
@@ -152,25 +155,27 @@ export class PaymentService {
 
       // Update transaction with all payment methods
       const updatedTransaction = {
-        ...transaction,
-        payments: [...transaction.payments, ...payments],
-        change,
-        status: 'paid' as const,
-        paidAt: new Date(),
-        updatedAt: new Date()
-      };
+              ...transaction,
+              payments: [...transaction.payments, ...payments],
+              change,
+              status: 'paid' as const,
+              paidAt: new Date(),
+              updatedAt: new Date(),
+              shiftId: transaction.shiftId // Preserve the shiftId
+            };
 
       // Validate and clean the transaction data
       const cleanedData = this.cleanTransactionData(updatedTransaction);
 
       // Update in database
-      await db.transactions.update(transactionId, {
-        payments: cleanedData.payments,
-        change: cleanedData.change,
-        status: cleanedData.status,
-        paidAt: cleanedData.paidAt,
-        updatedAt: cleanedData.updatedAt
-      });
+            await db.transactions.update(transactionId, {
+              payments: cleanedData.payments,
+              change: cleanedData.change,
+              status: cleanedData.status,
+              paidAt: cleanedData.paidAt,
+              updatedAt: cleanedData.updatedAt,
+              shiftId: cleanedData.shiftId
+            });
 
       // Get the updated transaction
       const finalTransaction = await db.transactions.get(transactionId);

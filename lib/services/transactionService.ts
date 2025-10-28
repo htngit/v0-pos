@@ -21,16 +21,17 @@ export class TransactionService {
     try {
       // Ensure all optional fields have proper values
       const transactionToCreate: Transaction = {
-        ...transactionData,
-        customerId: transactionData.customerId || null,
-        savedAt: transactionData.savedAt || null,
-        paidAt: transactionData.paidAt || null,
-        deletedAt: null,
-        id: uuidv7(),
-        transactionNumber: this.generateTransactionNumber(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+              ...transactionData,
+              customerId: transactionData.customerId || null,
+              shiftId: transactionData.shiftId || null, // Include shiftId
+              savedAt: transactionData.savedAt || null,
+              paidAt: transactionData.paidAt || null,
+              deletedAt: null,
+              id: uuidv7(),
+              transactionNumber: this.generateTransactionNumber(),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
       
       // Validate the transaction data
       const validation = safeValidateTransaction(transactionToCreate);
@@ -125,10 +126,11 @@ export class TransactionService {
 
       // Prepare updated transaction data
       const updatedTransaction = {
-        ...existingTransaction,
-        ...updateData,
-        updatedAt: new Date()
-      };
+              ...existingTransaction,
+              ...updateData,
+              shiftId: updateData.shiftId !== undefined ? updateData.shiftId : existingTransaction.shiftId, // Preserve shiftId if not explicitly updated
+              updatedAt: new Date()
+            };
 
       // Validate the updated data
       const validation = safeValidateTransaction(updatedTransaction);
@@ -241,13 +243,14 @@ export class TransactionService {
 
      // Update transaction with payment info
      const updatedTransaction = {
-       ...existingTransaction,
-       payments: [...existingTransaction.payments, payment],
-       change,
-       status: 'paid' as const,
-       paidAt: new Date(),
-       updatedAt: new Date()
-     };
+             ...existingTransaction,
+             payments: [...existingTransaction.payments, payment],
+             change,
+             status: 'paid' as const,
+             paidAt: new Date(),
+             updatedAt: new Date(),
+             shiftId: existingTransaction.shiftId // Preserve the shiftId
+           };
 
      // Validate updated transaction
      const validation = safeValidateTransaction(updatedTransaction);
@@ -282,16 +285,17 @@ export class TransactionService {
     try {
       // Prepare the transaction object with required fields
       const transactionToSave: Transaction = {
-        ...transactionData,
-        customerId: transactionData.customerId || null,
-        savedAt: transactionData.savedAt || new Date(),
-        paidAt: null,
-        deletedAt: null,
-        id: uuidv7(),
-        transactionNumber: this.generateTransactionNumber(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+              ...transactionData,
+              customerId: transactionData.customerId || null,
+              shiftId: transactionData.shiftId || null, // Include shiftId
+              savedAt: transactionData.savedAt || new Date(),
+              paidAt: null,
+              deletedAt: null,
+              id: uuidv7(),
+              transactionNumber: this.generateTransactionNumber(),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
       
       // Validate the transaction data
       const validation = safeValidateTransaction(transactionToSave);

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Plus, Minus, X } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import OrderListModal from "./order-list-modal"
+import CustomerSelectionModal from "./customer-selection-modal"
+import CheckoutModal from "./checkout-modal"
 import { useCashierStore } from "@/lib/stores/cashierStore"
 
 export default function SummaryOrder() {
@@ -24,6 +26,8 @@ export default function SummaryOrder() {
   const [discountPercent, setDiscountPercent] = useState(0)
   const [taxEnabled, setTaxEnabled] = useState(true)
   const [isOrderListOpen, setIsOrderListOpen] = useState(false)
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   const subtotal = calculateSubtotal()
@@ -65,8 +69,8 @@ export default function SummaryOrder() {
         <Button variant="outline" className="text-sm bg-transparent" onClick={() => setIsOrderListOpen(true)}>
           Daftar Order
         </Button>
-        <Button variant="outline" className="text-sm bg-transparent">
-          Pilih Pelanggan
+        <Button variant="outline" className="text-sm bg-transparent" onClick={() => setIsCustomerModalOpen(true)}>
+          {selectedCustomer ? `Pelanggan: ${selectedCustomer.name}` : 'Pilih Pelanggan'}
         </Button>
       </div>
 
@@ -176,6 +180,7 @@ export default function SummaryOrder() {
           <Button
             className="bg-primary hover:bg-primary/90"
             disabled={cart.length === 0}
+            onClick={() => setIsCheckoutModalOpen(true)}
           >
             Checkout
           </Button>
@@ -183,6 +188,8 @@ export default function SummaryOrder() {
       </div>
 
       <OrderListModal isOpen={isOrderListOpen} onClose={() => setIsOrderListOpen(false)} />
+      <CustomerSelectionModal isOpen={isCustomerModalOpen} onClose={() => setIsCustomerModalOpen(false)} />
+      <CheckoutModal isOpen={isCheckoutModalOpen} onClose={() => setIsCheckoutModalOpen(false)} />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { db, Product, Category, Supplier, Invoice, StockOpname, StockWaste } from '../db';
+import { useShiftStore } from './shiftStore';
 
 interface ProductState {
   products: Product[];
@@ -20,10 +21,10 @@ interface ProductState {
   initializeProducts: () => Promise<void>;
   
   // Inventory management functions
-  addPurchaseInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt' | 'deletedAt'>) => Promise<void>;
+  addPurchaseInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'shiftId'>) => Promise<void>;
   updateStock: (productId: string, quantity: number, unit: string) => Promise<void>;
-  addStockOpname: (opname: Omit<StockOpname, 'id' | 'createdAt'>) => Promise<void>;
-  addStockWaste: (waste: Omit<StockWaste, 'id' | 'createdAt'>) => Promise<void>;
+  addStockOpname: (opname: Omit<StockOpname, 'id' | 'createdAt' | 'shiftId'>) => Promise<void>;
+  addStockWaste: (waste: Omit<StockWaste, 'id' | 'createdAt' | 'shiftId'>) => Promise<void>;
   calculateHPP: (productId: string) => Promise<number>;
   getStockHistory: (productId: string) => Promise<any[]>;
   getLowStockProducts: () => Product[];
@@ -198,10 +199,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
       // Generate invoice number
       const invoiceNumber = `INV-${Date.now()}`;
       
+      // Get the current shift ID if there's an active shift
+      const { currentShiftId } = useShiftStore.getState();
+      
       const newInvoice: Invoice = {
         ...invoiceData,
         id: '',
         invoiceNumber,
+        shiftId: currentShiftId || null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -264,9 +269,13 @@ export const useProductStore = create<ProductState>((set, get) => ({
   addStockOpname: async (opnameData) => {
     set({ loading: true, error: null });
     try {
+      // Get the current shift ID if there's an active shift
+      const { currentShiftId } = useShiftStore.getState();
+      
       const newOpname: StockOpname = {
         ...opnameData,
         id: '',
+        shiftId: currentShiftId || null,
         createdAt: new Date(),
       };
       
@@ -291,9 +300,13 @@ export const useProductStore = create<ProductState>((set, get) => ({
   addStockWaste: async (wasteData) => {
     set({ loading: true, error: null });
     try {
+      // Get the current shift ID if there's an active shift
+      const { currentShiftId } = useShiftStore.getState();
+      
       const newWaste: StockWaste = {
         ...wasteData,
         id: '',
+        shiftId: currentShiftId || null,
         createdAt: new Date(),
       };
       

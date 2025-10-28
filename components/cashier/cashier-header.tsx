@@ -1,37 +1,60 @@
-"use client"
+"use client";
 
-import { Bell, Lock, Menu, LogOut } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useState } from "react"
-import NotificationPanel from "@/components/notifications/notification-panel"
+import { Bell, Lock, Menu, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import NotificationPanel from "@/components/notifications/notification-panel";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useAuthStore } from "@/lib/stores/authStore"
+} from "@/components/ui/dropdown-menu";
+import { useAuthStore } from "@/lib/stores/authStore";
+import { useShiftStore } from "@/lib/stores/shiftStore";
+import { format } from "date-fns";
 
-export default function Header() {
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [isOnline, setIsOnline] = useState(true)
+export default function CashierHeader() {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const { user, logout } = useAuthStore();
+  const { getCurrentShift } = useShiftStore();
+  const [shiftData, setShiftData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchShiftData = async () => {
+      if (user?.id) {
+        try {
+          const currentShift = await getCurrentShift();
+          setShiftData(currentShift);
+        } catch (error) {
+          console.error("Error fetching shift data:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchShiftData();
+  }, [user?.id, getCurrentShift]);
 
   const handleLogout = async () => {
     try {
-      await useAuthStore.getState().logout();
+      await logout();
       window.location.href = "/";
     } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails, clear local session
       window.location.href = "/";
     }
-  }
+  };
 
   const handleLockScreen = () => {
     // TODO: Show PIN lock screen
-    console.log("Lock screen")
-  }
+    console.log("Lock screen");
+  };
 
   return (
     <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between">
@@ -40,13 +63,33 @@ export default function Header() {
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
           <span className="text-primary-foreground font-bold text-sm">POS</span>
         </div>
+        <div className="flex flex-col">
+          <h1 className="font-semibold text-lg">Kasir</h1>
+          {/* Shift Status Indicator */}
+          {!loading && shiftData ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>Shift Aktif</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {user?.name} • {shiftData.openedAt ? format(new Date(shiftData.openedAt), 'HH:mm') : ''}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+              <span>Belum ada shift aktif</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
         {/* Online/Offline Indicator */}
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted">
-          <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-yellow-500"}`}></div>
+          <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-yellow-50"}`}></div>
           <span className="text-xs text-muted-foreground">{isOnline ? "Online" : "Offline"}</span>
         </div>
 
@@ -88,5 +131,5 @@ export default function Header() {
         </DropdownMenu>
       </div>
     </header>
-  )
+  );
 }

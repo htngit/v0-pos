@@ -1,5 +1,10 @@
-import CashierPage from "@/components/pages/cashier-page"
+import CashierPage from "@/components/pages/cashier-page";
+import AuthGuard from "@/components/auth/auth-guard";
 
 export default function Page() {
-  return <CashierPage />
+  return (
+    <AuthGuard>
+      <CashierPage />
+    </AuthGuard>
+  );
 }

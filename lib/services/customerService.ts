@@ -26,6 +26,11 @@ export class CustomerService {
         updatedAt: new Date(),
         deletedAt: null
       };
+
+      // Ensure createdBy is set (required by schema)
+      if (!customerToCreate.createdBy) {
+        throw new Error('createdBy field is required when creating a customer');
+      }
       
       // Validate the customer data
       const validation = safeValidateCustomer(customerToCreate);

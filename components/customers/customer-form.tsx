@@ -81,21 +81,24 @@ export default function CustomerForm({ customer, onClose }: CustomerFormProps) {
         })
       } else {
         // Create new customer
-        if (user) {
-          await addCustomer({
-            name: formData.name,
-            phone: formData.phone,
-            gender: formData.gender as 'male' | 'female' | null,
-            createdBy: user.id
-          })
-        } else {
+        if (!user) {
           throw new Error("User not authenticated");
         }
+        if (!user.id) {
+          throw new Error("User ID is not available");
+        }
+        await addCustomer({
+          name: formData.name,
+          phone: formData.phone,
+          gender: formData.gender as 'male' | 'female' | null,
+          createdBy: user.id
+        })
       }
       onClose()
     } catch (error) {
       console.error("Error saving customer:", error)
-      // In a real app, you might want to show an error toast here
+      // Show error message to user
+      alert(`Error saving customer: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }

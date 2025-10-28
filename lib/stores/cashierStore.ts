@@ -4,6 +4,7 @@ import { TransactionService } from '../services/transactionService';
 import { PaymentService } from '../services/paymentService';
 import { SavedOrderService } from '../services/savedOrderService';
 import { CashierShiftService } from '../services/cashierShiftService';
+import { useShiftStore } from './shiftStore';
 
 interface CartItem {
   productId: string;
@@ -112,25 +113,27 @@ export const useCashierStore = create<CashierState>((set, get) => ({
    const total = subtotal + tax - discount;
 
    // Create transaction object using the new service
-   const transactionData: Omit<Transaction, 'id' | 'transactionNumber' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'paidAt'> = {
-     customerId: selectedCustomer?.id || null,
-     items: cart.map(item => ({
-       productId: item.productId,
-       name: item.name,
-       qty: item.qty,
-       price: item.price,
-       subtotal: item.subtotal
-     })),
-     subtotal,
-     discount: { type: 'nominal', value: 0, amount: discount },
-     tax: { enabled: true, rate: 0, amount: tax },
-     total,
-     payments: [],
-     change: 0,
-     status: 'saved',
-     savedAt: new Date(),
-     createdBy: 'current-user-id', // TODO: Get from authStore
-   };
+           const { currentShiftId } = useShiftStore.getState();
+           const transactionData: Omit<Transaction, 'id' | 'transactionNumber' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'paidAt'> = {
+             customerId: selectedCustomer?.id || null,
+             shiftId: currentShiftId || null, // Include the current shift ID if available
+             items: cart.map(item => ({
+               productId: item.productId,
+               name: item.name,
+               qty: item.qty,
+               price: item.price,
+               subtotal: item.subtotal
+             })),
+             subtotal,
+             discount: { type: 'nominal', value: 0, amount: discount },
+             tax: { enabled: true, rate: 0, amount: tax },
+             total,
+             payments: [],
+             change: 0,
+             status: 'saved',
+             savedAt: new Date(),
+             createdBy: 'current-user-id', // TODO: Get from authStore
+           };
 
    try {
      // Use the new service to save the transaction
@@ -209,26 +212,28 @@ export const useCashierStore = create<CashierState>((set, get) => ({
       'qris';
     
     // Create transaction object using the new service
-    const transactionData: Omit<Transaction, 'id' | 'transactionNumber' | 'createdAt' | 'updatedAt' | 'deletedAt'> = {
-      customerId: selectedCustomer?.id || null,
-      items: cart.map(item => ({
-        productId: item.productId,
-        name: item.name,
-        qty: item.qty,
-        price: item.price,
-        subtotal: item.subtotal
-      })),
-      subtotal,
-      discount: { type: 'nominal', value: 0, amount: discount },
-      tax: { enabled: true, rate: 0, amount: tax },
-      total,
-      payments: [],
-      change: 0, // Will be calculated by the service
-      status: 'paid',
-      savedAt: null,
-      paidAt: null, // Need to include this
-      createdBy: 'current-user-id', // TODO: Get from authStore
-    };
+         const { currentShiftId } = useShiftStore.getState();
+         const transactionData: Omit<Transaction, 'id' | 'transactionNumber' | 'createdAt' | 'updatedAt' | 'deletedAt'> = {
+           customerId: selectedCustomer?.id || null,
+           shiftId: currentShiftId || null, // Include the current shift ID if available
+           items: cart.map(item => ({
+             productId: item.productId,
+             name: item.name,
+             qty: item.qty,
+             price: item.price,
+             subtotal: item.subtotal
+           })),
+           subtotal,
+           discount: { type: 'nominal', value: 0, amount: discount },
+           tax: { enabled: true, rate: 0, amount: tax },
+           total,
+           payments: [],
+           change: 0, // Will be calculated by the service
+           status: 'paid',
+           savedAt: null,
+           paidAt: null, // Need to include this
+           createdBy: 'current-user-id', // TODO: Get from authStore
+         };
     
     try {
       // Create the transaction first

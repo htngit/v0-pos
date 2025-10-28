@@ -62,8 +62,9 @@ export interface Supplier {
 export interface Invoice {
   id: string;
   invoiceNumber: string; // Auto-generated
- supplierId: string; // suppliers.id
- items: {
+  supplierId: string; // suppliers.id
+  shiftId?: string | null; // cashierShifts.id - optional to maintain backward compatibility
+  items: {
     productId: string;
     qty: number;
     unitPrice: number;
@@ -78,12 +79,13 @@ export interface Invoice {
   remainingDebt: number;
   createdBy: string; // user.id
   createdAt: Date;
- updatedAt: Date;
- deletedAt: Date | null;
+  updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 export interface StockOpname {
   id: string;
+  shiftId?: string | null; // cashierShifts.id - optional to maintain backward compatibility
   items: {
     productId: string;
     systemStock: number;
@@ -92,17 +94,18 @@ export interface StockOpname {
   }[];
   notes: string | null;
   createdBy: string; // user.id
- createdAt: Date;
+  createdAt: Date;
 }
 
 export interface StockWaste {
   id: string;
   productId: string; // products.id
+  shiftId?: string | null; // cashierShifts.id - optional to maintain backward compatibility
   qty: number;
   unit: string;
- reason: string;
+  reason: string;
   createdBy: string; // user.id
- createdAt: Date;
+  createdAt: Date;
 }
 
 export interface Customer {
@@ -120,13 +123,14 @@ export interface Transaction {
   id: string;
   transactionNumber: string; // Auto-generated
   customerId: string | null; // customers.id
+  shiftId?: string | null; // cashierShifts.id - optional to maintain backward compatibility
   items: {
     productId: string;
     name: string;
     qty: number;
     price: number;
     subtotal: number;
-  }[];
+ }[];
   subtotal: number;
   discount: {
     type: 'percent' | 'nominal';
@@ -149,8 +153,8 @@ export interface Transaction {
   paidAt: Date | null;
   createdBy: string; // user.id
   createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
+ updatedAt: Date;
+ deletedAt: Date | null;
 }
 
 export interface CashierShift {
@@ -233,19 +237,61 @@ export class POSDatabase extends Dexie {
     });
 
     // Initialize database version
-    this.version(1).stores({
+        this.version(3).stores({
+          users: 'id, email, role, createdAt, updatedAt, deletedAt',
+          categories: 'id, name, createdBy, createdAt, updatedAt, deletedAt',
+          products: 'id, name, type, categoryId, sku, createdBy, createdAt, updatedAt, deletedAt',
+          suppliers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
+          invoices: 'id, invoiceNumber, supplierId, createdBy, createdAt, updatedAt, deletedAt',
+          stockOpnames: 'id, createdBy, createdAt',
+          stockWastes: 'id, productId, createdBy, createdAt',
+          customers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
+          transactions: 'id, transactionNumber, customerId, status, createdBy, createdAt, updatedAt, deletedAt, shiftId',
+          cashierShifts: 'id, openedBy, closedBy, openedAt, closedAt, status',
+          settings: 'id, key, updatedAt',
+          notifications: 'id, type, read, createdAt'
+        }).upgrade(trans => {
+          // Set shiftId to null for existing transactions that don't have the field
+          return trans.table('transactions').toCollection().modify((obj: any) => {
+            if (obj.shiftId === undefined) {
+              obj.shiftId = null;
+            }
+          });
+        });
+    
+    // Add shiftId to invoices, stockOpnames, and stockWastes in version 4
+    this.version(4).stores({
       users: 'id, email, role, createdAt, updatedAt, deletedAt',
       categories: 'id, name, createdBy, createdAt, updatedAt, deletedAt',
       products: 'id, name, type, categoryId, sku, createdBy, createdAt, updatedAt, deletedAt',
       suppliers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
-      invoices: 'id, invoiceNumber, supplierId, createdBy, createdAt, updatedAt, deletedAt',
-      stockOpnames: 'id, createdBy, createdAt',
-      stockWastes: 'id, productId, createdBy, createdAt',
+      invoices: 'id, invoiceNumber, supplierId, createdBy, createdAt, updatedAt, deletedAt, shiftId',
+      stockOpnames: 'id, createdBy, createdAt, shiftId',
+      stockWastes: 'id, productId, createdBy, createdAt, shiftId',
       customers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
-      transactions: 'id, transactionNumber, customerId, status, createdBy, createdAt, updatedAt, deletedAt',
+      transactions: 'id, transactionNumber, customerId, status, createdBy, createdAt, updatedAt, deletedAt, shiftId',
       cashierShifts: 'id, openedBy, closedBy, openedAt, closedAt, status',
       settings: 'id, key, updatedAt',
       notifications: 'id, type, read, createdAt'
+    }).upgrade((trans: any) => {
+      // Set shiftId to null for existing records that don't have the field
+      return Promise.all([
+        trans.table('invoices').toCollection().modify((obj: any) => {
+          if (obj.shiftId === undefined) {
+            obj.shiftId = null;
+          }
+        }),
+        trans.table('stockOpnames').toCollection().modify((obj: any) => {
+          if (obj.shiftId === undefined) {
+            obj.shiftId = null;
+          }
+        }),
+        trans.table('stockWastes').toCollection().modify((obj: any) => {
+          if (obj.shiftId === undefined) {
+            obj.shiftId = null;
+          }
+        })
+      ]);
     });
   }
 }

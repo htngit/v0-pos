@@ -161,19 +161,102 @@ class EscPosService {
 
   /**
    * Send commands to printer (simplified implementation)
+   * In a real implementation, this would communicate with the actual ESC/POS printer
    */
   async sendToPrinter(commands: EscPosCommand[]): Promise<void> {
-    // In a real implementation, this would communicate with the actual printer
-    // For now, we'll just log the commands
-    console.log('Sending commands to printer:', commands);
+    try {
+      // Create a new Uint8Array to store the ESC/POS commands
+      const buffer: number[] = [];
+      
+      for (const cmd of commands) {
+        switch (cmd.command) {
+          case 'INIT':
+            // Initialize printer
+            buffer.push(0x1B, 0x40); // ESC @ - Initialize printer
+            break;
+          case 'TEXT':
+            // Add text to buffer
+            if (cmd.data && cmd.data.text) {
+              // Handle text formatting based on data properties
+              if (cmd.data.bold) {
+                buffer.push(0x1B, 0x45, 0x01); // Bold on
+              }
+              if (cmd.data.align === 'center') {
+                buffer.push(0x1B, 0x61, 0x01); // Align center
+              } else if (cmd.data.align === 'right') {
+                buffer.push(0x1B, 0x61, 0x02); // Align right
+              } else {
+                buffer.push(0x1B, 0x61, 0x00); // Align left
+              }
+              
+              // Add the text content
+              const textBytes = new TextEncoder().encode(cmd.data.text);
+              buffer.push(...textBytes);
+              
+              // Add line break
+              buffer.push(0x0A); // LF (Line Feed)
+              
+              // Turn off bold if it was on
+              if (cmd.data.bold) {
+                buffer.push(0x1B, 0x45, 0x00); // Bold off
+              }
+            }
+            break;
+          case 'LINE':
+            // Draw a line
+            buffer.push(...new TextEncoder().encode('--------------------------------'));
+            buffer.push(0x0A); // LF (Line Feed)
+            break;
+          case 'SPACING':
+            // Add spacing (line feeds)
+            if (cmd.data && cmd.data.lines) {
+              for (let i = 0; i < cmd.data.lines; i++) {
+                buffer.push(0x0A); // LF (Line Feed)
+              }
+            } else {
+              buffer.push(0x0A); // Default to one line feed
+            }
+            break;
+          case 'CUT':
+            // Cut the paper
+            buffer.push(0x1D, 0x56, 0x01); // GS V 1 - Full cut
+            break;
+          case 'BARCODE':
+            // Print barcode (simplified)
+            if (cmd.data && cmd.data.text) {
+              buffer.push(0x1D, 0x6B, 0x02); // GS k 2 - Print barcode (CODE128)
+              const textBytes = new TextEncoder().encode(cmd.data.text);
+              buffer.push(...textBytes);
+              buffer.push(0x00); // Null terminator
+            }
+            break;
+          case 'LOGO':
+            // Print logo (if supported by printer)
+            // This is printer-specific and would require custom implementation
+            break;
+          default:
+            // For unknown commands, just log them
+            console.warn(`Unknown command: ${cmd.command}`);
+            break;
+        }
+      }
 
-    // Simulate printer operation
-    return new Promise(resolve => {
-      setTimeout(() => {
-        console.log('Receipt printed successfully');
-        resolve();
-      }, 1000);
-    });
+      // In a real implementation, you would send this buffer to the actual printer
+      // This could be via Web Bluetooth API, a local server, or other methods
+      console.log('ESC/POS command buffer created:', buffer);
+      
+      // Simulate sending to printer and wait for completion
+      return new Promise((resolve, reject) => {
+        // Simulate network delay or printer processing time
+        setTimeout(() => {
+          console.log('Commands sent to printer successfully');
+          resolve();
+        }, 500);
+      });
+    } catch (error) {
+      console.error('Error in sendToPrinter:', error);
+      throw error;
+    }
   }
 
   /**

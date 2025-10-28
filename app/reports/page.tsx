@@ -1,5 +1,10 @@
-import ReportsPage from "@/components/pages/reports-page"
+import ReportsPage from "@/components/pages/reports-page";
+import AuthGuard from "@/components/auth/auth-guard";
 
 export default function Page() {
-  return <ReportsPage />
+  return (
+    <AuthGuard>
+      <ReportsPage />
+    </AuthGuard>
+  );
 }

@@ -211,7 +211,7 @@ class PrintingService {
   /**
    * Send commands to printer (simplified implementation)
    */
-  private async sendToPrinter(commands: EscPosCommand[]): Promise<void> {
+  async sendToPrinter(commands: EscPosCommand[]): Promise<void> {
     // In a real implementation, this would communicate with the actual printer
     // For now, we'll just log the commands
     console.log('Sending commands to printer:', commands);

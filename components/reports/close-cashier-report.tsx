@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AlertCircle } from "lucide-react"
-import { CashierShiftService } from "@/lib/services/cashierShiftService";
+import { useShiftStore } from "@/lib/stores/shiftStore";
 import { ReportService } from "@/lib/services/reportService";
 import { ExportService } from "@/lib/services/exportService";
 import { useAuthStore } from "@/lib/stores/authStore";
@@ -31,7 +31,9 @@ export default function CloseCashierReport() {
     const fetchShiftData = async () => {
       setLoading(true);
       try {
-        const currentShift = await CashierShiftService.getCurrentOpenShift(user?.id || "");
+        // Use the shift store to get current shift status
+        await useShiftStore.getState().checkShiftStatus(user?.id || "");
+        const currentShift = await useShiftStore.getState().getCurrentShift();
         if (currentShift) {
           const report = await ReportService.getCloseCashierReport(currentShift.id);
           setShiftData(report.shift);
@@ -62,8 +64,18 @@ export default function CloseCashierReport() {
     try {
       // Close the shift with actual cash
       if (shiftData) {
-        await CashierShiftService.closeShift(shiftData.id, Number(actualCash));
+        await useShiftStore.getState().closeShift(shiftData.id, Number(actualCash));
         toast.success("Cashier closed successfully");
+        
+        // After successfully closing cashier, log out the user
+        try {
+          await useAuthStore.getState().logout();
+          window.location.href = "/";
+        } catch (logoutError) {
+          console.error('Logout error after closing cashier:', logoutError);
+          // Even if logout fails, redirect to login page
+          window.location.href = "/";
+        }
       }
     } catch (error) {
       console.error("Error closing cashier:", error);

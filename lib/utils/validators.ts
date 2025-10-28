@@ -76,7 +76,8 @@ export const customerSchema = z.object({
 export const transactionSchema = z.object({
   id: z.string().uuid(),
   transactionNumber: z.string(),
-  customerId: z.string().uuid().nullable().optional(),
+ customerId: z.string().uuid().nullable().optional(),
+  shiftId: z.string().uuid().nullable().optional(),
   items: z.array(
     z.object({
       productId: z.string().uuid(),

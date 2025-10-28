@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCustomerStore } from "@/lib/stores/customerStore"
 import { useCashierStore } from "@/lib/stores/cashierStore"
+import { useAuthStore } from "@/lib/stores/authStore"
 import { Customer } from "@/lib/db"
 
 interface CustomerSelectionModalProps {
@@ -16,6 +17,7 @@ interface CustomerSelectionModalProps {
 export default function CustomerSelectionModal({ isOpen, onClose }: CustomerSelectionModalProps) {
   const { customers, loading, error, fetchCustomers, searchCustomers } = useCustomerStore()
   const { selectCustomer, selectedCustomer } = useCashierStore()
+  const { user } = useAuthStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddForm, setShowAddForm] = useState(false)
   const [newCustomer, setNewCustomer] = useState({
@@ -46,12 +48,22 @@ export default function CustomerSelectionModal({ isOpen, onClose }: CustomerSele
   const handleAddCustomer = async () => {
     if (!newCustomer.name.trim()) return
 
+    if (!user) {
+      console.error('User not authenticated')
+      return
+    }
+
+    if (!user.id) {
+      console.error('User ID is not available')
+      return
+    }
+
     try {
       await useCustomerStore.getState().addCustomer({
         name: newCustomer.name.trim(),
         phone: newCustomer.phone.trim() || null,
         gender: newCustomer.gender,
-        createdBy: 'current-user-id' // TODO: Get from authStore
+        createdBy: user.id
       })
 
       // Reset form

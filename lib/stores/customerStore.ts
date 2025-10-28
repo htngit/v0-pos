@@ -41,8 +41,9 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       }));
     } catch (error: any) {
       set({ error: error.message, loading: false });
+      throw error; // Re-throw to allow caller to handle
     }
- },
+  },
   
   updateCustomer: async (id, updates) => {
     set({ loading: true, error: null });

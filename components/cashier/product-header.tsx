@@ -3,14 +3,14 @@
 import { Bell, Lock, Grid, List, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
+import { useState, useId } from "react"
 import NotificationPanel from "@/components/notifications/notification-panel"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Search } from "lucide-react"
 import SpaceViewModal from "@/components/cashier/space-view-modal"
+import { useAuthStore } from "@/lib/stores/authStore";
 // TODO: Import and use offline detection hooks
 // import { useOffline } from "@/lib/hooks/useOffline"
-// import { useAuthStore } from "@/lib/stores/authStore"
 
 interface ProductHeaderProps {
   searchQuery: string
@@ -23,10 +23,21 @@ export default function ProductHeader({ searchQuery, onSearchChange, viewMode, o
   const [showNotifications, setShowNotifications] = useState(false)
   const [isOnline, setIsOnline] = useState(true)
   const [showSpaceView, setShowSpaceView] = useState(false)
+  
+  // Generate stable IDs to prevent hydration mismatches
+  const dropdownTriggerId = useId()
+  const notificationButtonId = useId()
+  const lockButtonId = useId()
 
-  const handleLogout = () => {
-    localStorage.removeItem("pos_session")
-    window.location.href = "/"
+  const handleLogout = async () => {
+    try {
+      await useAuthStore.getState().logout();
+      window.location.href = "/";
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if logout fails, clear local session
+      window.location.href = "/";
+    }
   }
 
   const handleLockScreen = () => {
@@ -65,6 +76,7 @@ export default function ProductHeader({ searchQuery, onSearchChange, viewMode, o
                 size="icon"
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative"
+                id={notificationButtonId}
               >
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
@@ -73,18 +85,32 @@ export default function ProductHeader({ searchQuery, onSearchChange, viewMode, o
             </div>
 
             {/* Lock Screen */}
-            <Button variant="ghost" size="icon" onClick={handleLockScreen} title="Lock Screen (Ctrl+L)">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLockScreen}
+              title="Lock Screen (Ctrl+L)"
+              id={lockButtonId}
+            >
               <Lock className="w-5 h-5" />
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 bg-transparent"
+                  id={dropdownTriggerId}
+                >
                   {viewMode === "grid" ? <Grid className="w-4 h-4" /> : <List className="w-4 h-4" />}
                   <ChevronDown className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuContent
+                align="end"
+                className="w-40"
+              >
                 <DropdownMenuItem onClick={() => onViewModeChange("grid")} className="gap-2">
                   <Grid className="w-4 h-4" />
                   Grid View

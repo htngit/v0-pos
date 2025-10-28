@@ -25,7 +25,15 @@ export default function CustomerList({ onEdit }: CustomerListProps) {
 
   // Fetch customers when component mounts
   useEffect(() => {
-    fetchCustomers()
+    const loadCustomers = async () => {
+      try {
+        await fetchCustomers()
+      } catch (error) {
+        console.error("Error loading customers:", error)
+        toast.error("Failed to load customers")
+      }
+    }
+    loadCustomers()
   }, [fetchCustomers])
 
   const filteredCustomers = searchQuery ? searchCustomers(searchQuery) : customers.filter(c => !c.deletedAt)
