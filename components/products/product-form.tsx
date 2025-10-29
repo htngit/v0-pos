@@ -40,6 +40,7 @@ export default function ProductForm({ product, onClose }: ProductFormProps) {
   })
 
   useEffect(() => {
+    console.log("ProductForm: Fetching categories...")
     fetchCategories()
   }, [fetchCategories])
 
@@ -150,12 +151,15 @@ export default function ProductForm({ product, onClose }: ProductFormProps) {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                       {categories.map((category) => {
+                         console.log("ProductForm: Rendering category", { id: category.id, name: category.name })
+                         return (
+                           <SelectItem key={category.id} value={category.id}>
+                             {category.name}
+                           </SelectItem>
+                         )
+                       })}
+                     </SelectContent>
                   </Select>
                 </div>
 

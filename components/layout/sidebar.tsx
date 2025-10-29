@@ -197,7 +197,7 @@ export default function Sidebar() {
       </div>
 
       {/* Menu Items */}
-      <div className="space-y-2 flex-1">
+      <div className="space-y-4 flex-1">
         {menuItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname.startsWith(item.href)
@@ -207,8 +207,8 @@ export default function Sidebar() {
               <Button
                 variant={isActive ? "default" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3 transition-all duration-300",
-                  isActive && "bg-primary text-primary-foreground",
+                  "w-full justify-start gap-3 mt-1 transition-all duration-300",
+                  isActive && "bg-primary p-2 text-primary-foreground",
                   isCollapsed && "justify-center p-2",
                 )}
                 title={isCollapsed ? item.label : undefined}

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "dev:ws": "node scripts/start-dev-server.js",
     "lint": "eslint .",
     "start": "next start"
   },
