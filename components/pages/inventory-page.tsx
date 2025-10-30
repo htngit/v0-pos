@@ -1,20 +1,43 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import MainLayout from "@/components/layout/main-layout"
 import StockList from "@/components/inventory/stock-list"
 import PurchaseInvoiceForm from "@/components/inventory/purchase-invoice-form"
 import StockOpnameForm from "@/components/inventory/stock-opname-form"
 import StockWasteForm from "@/components/inventory/stock-waste-form"
 import SupplierList from "@/components/inventory/supplier-list"
+import InvoiceDetails from "@/components/inventory/invoice-details"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"
 
 export default function InventoryPage() {
+  const [activeTab, setActiveTab] = useState("stock")
   const [showInvoiceForm, setShowInvoiceForm] = useState(false)
   const [showOpnameForm, setShowOpnameForm] = useState(false)
   const [showWasteForm, setShowWasteForm] = useState(false)
+
+  // Handle tab changes to trigger data fetching when needed
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // If switching to invoices tab, we could trigger a refresh of invoice data
+    // The InvoiceDetails component will handle this through its own useEffect
+    if (value === "invoices") {
+      // The InvoiceDetails component will automatically fetch invoices when mounted
+      // This useEffect in inventory page ensures the tab switch is tracked
+      console.log("Switched to invoices tab");
+    }
+  };
+
+  useEffect(() => {
+    // Set default active tab
+    if (!activeTab) {
+      setActiveTab("stock");
+    }
+  }, [activeTab]);
 
   return (
     <MainLayout>
@@ -25,7 +48,7 @@ export default function InventoryPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="stock" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="stock">Stock</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
@@ -41,13 +64,17 @@ export default function InventoryPage() {
 
           {/* Invoices Tab */}
           <TabsContent value="invoices" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => setShowInvoiceForm(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                New Invoice
-              </Button>
-            </div>
-            {showInvoiceForm && <PurchaseInvoiceForm onClose={() => setShowInvoiceForm(false)} />}
+            <InvoiceDetails onNewInvoiceClick={() => setShowInvoiceForm(true)} />
+            
+            {/* New Invoice Modal */}
+            <Dialog open={showInvoiceForm} onOpenChange={setShowInvoiceForm}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Purchase Invoice</DialogTitle>
+                </DialogHeader>
+                <PurchaseInvoiceForm onClose={() => setShowInvoiceForm(false)} />
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Stock Opname Tab */}

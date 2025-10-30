@@ -139,7 +139,9 @@ export default function StockWasteForm({ onClose }: { onClose: () => void }) {
                 <SelectValue placeholder="Select product" />
               </SelectTrigger>
               <SelectContent>
-                {products.filter(p => !p.deletedAt).map(product => (
+                {products
+                  .filter(p => !p.deletedAt && p.id && p.id.trim() !== '' && p.name && p.name.trim() !== '')
+                  .map(product => (
                   <SelectItem key={product.id} value={product.id}>
                     {product.name} - {product.sku || 'No SKU'}
                   </SelectItem>

@@ -5,11 +5,15 @@ import { useShiftStore } from './shiftStore';
 interface ProductState {
   products: Product[];
   categories: Category[];
+  suppliers: Supplier[];
+  invoices: Invoice[];
   loading: boolean;
   error: string | null;
   
   fetchProducts: () => Promise<void>;
   fetchCategories: () => Promise<void>;
+  fetchSuppliers: () => Promise<void>;
+  fetchInvoices: () => Promise<void>;
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>) => Promise<void>;
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -36,7 +40,6 @@ interface ProductState {
   validateRecipeMaterials: (recipe: { materialId: string; qty: number; unit: string }[]) => Promise<boolean>;
   
   // Supplier management functions
-  fetchSuppliers: () => Promise<void>;
   addSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>) => Promise<void>;
   updateSupplier: (id: string, updates: Partial<Supplier>) => Promise<void>;
   deleteSupplier: (id: string) => Promise<void>;
@@ -46,25 +49,91 @@ interface ProductState {
 export const useProductStore = create<ProductState>((set, get) => ({
   products: [],
   categories: [],
+  suppliers: [],
+  invoices: [],
   loading: false,
   error: null,
   
   fetchProducts: async () => {
     set({ loading: true, error: null });
     try {
-      const products = await db.products.filter(p => !p.deletedAt).toArray();
-      set({ products, loading: false });
+      let products = await db.products.filter(p => !p.deletedAt).toArray();
+      
+      // Validate and cleanup products with invalid data
+      const invalidProducts = products.filter(p => !p.id || p.id.trim() === '' || !p.name || p.name.trim() === '');
+      if (invalidProducts.length > 0) {
+        console.log("ProductStore: Found products with invalid data:", invalidProducts.map(p => ({ id: p.id, name: p.name })));
+        
+        // Fix invalid products by generating proper UUIDs for missing IDs
+        for (const product of invalidProducts) {
+          if (!product.id || product.id.trim() === '') {
+            const newId = crypto.randomUUID();
+            await db.products.update(product.id, { id: newId, updatedAt: new Date() });
+            console.log("ProductStore: Fixed product ID:", { oldId: product.id, newId, name: product.name });
+          }
+        }
+        
+        // Re-fetch products after cleanup
+        products = await db.products.filter(p => !p.deletedAt).toArray();
+      }
+      
+      // Additional validation to ensure all products have valid structure
+      const validatedProducts = products.filter(p =>
+        p.id &&
+        p.id.trim() !== '' &&
+        p.name &&
+        p.name.trim() !== ''
+      );
+      
+      console.log("ProductStore: Fetched and validated products", validatedProducts.map(p => ({ id: p.id, name: p.name })));
+      set({ products: validatedProducts, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
- },
+  },
+  
+  fetchInvoices: async () => {
+    set({ loading: true, error: null });
+    try {
+      const invoices = await db.invoices.filter(i => !i.deletedAt).toArray();
+      console.log("ProductStore: Fetched invoices", invoices);
+      set({ invoices, loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
   
   fetchCategories: async () => {
     set({ loading: true, error: null });
     try {
-      const categories = await db.categories.filter(c => !c.deletedAt).toArray();
-      console.log("ProductStore: Fetched categories", categories.map(c => ({ id: c.id, name: c.name })));
-      set({ categories, loading: false });
+      let categories = await db.categories.filter(c => !c.deletedAt).toArray();
+      
+      // Validate and cleanup categories with invalid IDs
+      const invalidCategories = categories.filter(c => !c.id || c.id.trim() === '');
+      if (invalidCategories.length > 0) {
+        console.log("ProductStore: Found categories with invalid IDs:", invalidCategories.map(c => ({ id: c.id, name: c.name })));
+        
+        // Fix invalid categories by generating proper UUIDs
+        for (const category of invalidCategories) {
+          const newId = crypto.randomUUID();
+          await db.categories.update(category.id, { id: newId, updatedAt: new Date() });
+          console.log("ProductStore: Fixed category ID:", { oldId: category.id, newId, name: category.name });
+        }
+        
+        // Re-fetch categories after cleanup
+        categories = await db.categories.filter(c => !c.deletedAt).toArray();
+      }
+      
+      // Additional validation to ensure all categories have valid structure
+      const validatedCategories = categories.filter(c =>
+        c.id &&
+        c.id.trim() !== '' &&
+        c.name &&
+        c.name.trim() !== ''
+      );
+      
+      console.log("ProductStore: Fetched and validated categories", validatedCategories.map(c => ({ id: c.id, name: c.name })));
+      set({ categories: validatedCategories, loading: false });
     } catch (error: any) {
       console.log("ProductStore: Error fetching categories", error);
       set({ error: error.message, loading: false });
@@ -124,20 +193,29 @@ export const useProductStore = create<ProductState>((set, get) => ({
   addCategory: async (categoryData) => {
     set({ loading: true, error: null });
     try {
+      // Validate input data
+      if (!categoryData.name || categoryData.name.trim() === '') {
+        throw new Error("Category name is required");
+      }
+
+      // Ensure we have a valid UUID for the category
+      const categoryId = crypto.randomUUID();
+      
       const newCategory: Category = {
         ...categoryData,
-        id: crypto.randomUUID(), // Generate UUID instead of empty string
+        id: categoryId,
+        name: categoryData.name.trim(), // Ensure name is trimmed
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
       };
 
       const id = await db.categories.add(newCategory);
-      console.log("ProductStore: Added category", { id, name: newCategory.name });
-      set(state => ({
-        categories: [...state.categories, { ...newCategory, id }],
-        loading: false
-      }));
+      console.log("ProductStore: Added category", { id: categoryId, name: newCategory.name });
+      
+      // Immediately refresh categories to ensure consistency
+      const updatedCategories = await db.categories.filter(c => !c.deletedAt).toArray();
+      set({ categories: updatedCategories, loading: false });
     } catch (error: any) {
       console.log("ProductStore: Error adding category", error);
       set({ error: error.message, loading: false });
@@ -194,7 +272,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
   initializeProducts: async () => {
     await Promise.all([
       get().fetchProducts(),
-      get().fetchCategories()
+      get().fetchCategories(),
+      get().fetchSuppliers()
     ]);
   },
   
@@ -202,15 +281,16 @@ export const useProductStore = create<ProductState>((set, get) => ({
   addPurchaseInvoice: async (invoiceData) => {
     set({ loading: true, error: null });
     try {
-      // Generate invoice number
+      // Generate invoice number and UUID for proper constraint handling
       const invoiceNumber = `INV-${Date.now()}`;
+      const invoiceId = crypto.randomUUID();
       
       // Get the current shift ID if there's an active shift
       const { currentShiftId } = useShiftStore.getState();
       
       const newInvoice: Invoice = {
         ...invoiceData,
-        id: '',
+        id: invoiceId,
         invoiceNumber,
         shiftId: currentShiftId || null,
         createdAt: new Date(),
@@ -244,7 +324,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
       
       // Refresh products after stock update
       const updatedProducts = await db.products.filter(p => !p.deletedAt).toArray();
-      set({ products: updatedProducts, loading: false });
+      // Refresh invoices after adding new invoice
+      const updatedInvoices = await db.invoices.filter(i => !i.deletedAt).toArray();
+      set({ products: updatedProducts, invoices: updatedInvoices, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -468,7 +550,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const suppliers = await db.suppliers.filter(s => !s.deletedAt).toArray();
       // We're storing suppliers in the products store for now, but in a real app this would be in a separate supplier store
       console.log("Fetched suppliers:", suppliers);
-      set({ loading: false });
+      set({ suppliers, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -477,18 +559,31 @@ export const useProductStore = create<ProductState>((set, get) => ({
   addSupplier: async (supplierData) => {
     set({ loading: true, error: null });
     try {
+      // Generate a proper UUID for the supplier to avoid constraint errors
+      const supplierId = crypto.randomUUID();
+      
       const newSupplier: Supplier = {
         ...supplierData,
-        id: '', // Will be auto-generated by DB
+        id: supplierId,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
       };
       
-      const id = await db.suppliers.add(newSupplier);
-      console.log("Added supplier with ID:", id);
-      set({ loading: false });
+      console.log("Adding supplier:", newSupplier);
+      
+      await db.suppliers.add(newSupplier);
+      console.log("Supplier added successfully with ID:", supplierId);
+      
+      // Update the store state with the new supplier immediately
+      set(state => ({
+        suppliers: [...state.suppliers, newSupplier],
+        loading: false
+      }));
+      
+      console.log("Store updated with new supplier:", newSupplier);
     } catch (error: any) {
+      console.error("Error adding supplier:", error);
       set({ error: error.message, loading: false });
     }
   },
@@ -498,11 +593,18 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       await db.suppliers.update(id, { ...updates, updatedAt: new Date() });
       console.log("Updated supplier with ID:", id);
-      set({ loading: false });
+      
+      // Update the store state with the updated supplier
+      set(state => ({
+        suppliers: state.suppliers.map(supplier =>
+          supplier.id === id ? { ...supplier, ...updates, updatedAt: new Date() } : supplier
+        ),
+        loading: false
+      }));
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
-  },
+ },
   
   deleteSupplier: async (id) => {
     set({ loading: true, error: null });
@@ -510,14 +612,29 @@ export const useProductStore = create<ProductState>((set, get) => ({
       // Soft delete by setting deletedAt
       await db.suppliers.update(id, { deletedAt: new Date(), updatedAt: new Date() });
       console.log("Deleted supplier with ID:", id);
-      set({ loading: false });
+      
+      // Update the store state by marking the supplier as deleted
+      set(state => ({
+        suppliers: state.suppliers.map(supplier =>
+          supplier.id === id ? { ...supplier, deletedAt: new Date(), updatedAt: new Date() } : supplier
+        ),
+        loading: false
+      }));
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
-  },
+ },
   
   searchSuppliers: (query) => {
-    // TODO: Implement supplier search functionality
-    return [];
+    const state = get();
+    if (!query) return state.suppliers;
+    
+    const lowerQuery = query.toLowerCase();
+    return state.suppliers.filter(supplier =>
+      !supplier.deletedAt &&
+      (supplier.name.toLowerCase().includes(lowerQuery) ||
+       (supplier.phone && supplier.phone.toLowerCase().includes(lowerQuery)) ||
+       (supplier.address && supplier.address.toLowerCase().includes(lowerQuery)))
+    );
   }
 }));

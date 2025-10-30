@@ -2,83 +2,37 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, Trash2, Plus } from "lucide-react"
 import { useProductStore } from "@/lib/stores/productStore"
 import { Category as CategoryType } from "@/lib/db"
 import { useNotificationStore } from "@/lib/stores/notificationStore"
+import CategoryForm from "./category-form"
 
 export default function CategoryManager() {
-  const { categories, loading, fetchCategories, addCategory, updateCategory, deleteCategory } = useProductStore()
+  const { categories, products, loading, fetchCategories, deleteCategory } = useProductStore()
   const { showNotification } = useNotificationStore()
-  const [newCategory, setNewCategory] = useState("")
-  const [newDescription, setNewDescription] = useState("")
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingName, setEditingName] = useState("")
-  const [editingDescription, setEditingDescription] = useState("")
+  const [showCategoryForm, setShowCategoryForm] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<CategoryType | null>(null)
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const handleAddCategory = async () => {
-    if (!newCategory.trim()) return
-
-    try {
-      await addCategory({
-        name: newCategory.trim(),
-        description: newDescription.trim() || null,
-        createdBy: 'current-user-id', // Will be replaced with actual user ID
-      });
-
-      showNotification({
-        type: 'saved_order',
-        title: "Success",
-        message: "Category added successfully",
-        data: null,
-      });
-
-      setNewCategory("");
-      setNewDescription("");
-    } catch (error: any) {
-      showNotification({
-        type: 'low_stock',
-        title: "Error",
-        message: error.message || "Failed to add category",
-        data: null,
-      });
-    }
+  const handleAddCategory = () => {
+    setEditingCategory(null)
+    setShowCategoryForm(true)
   }
 
-  const handleUpdateCategory = async () => {
-    if (!editingId || !editingName.trim()) return;
+  const handleEditCategory = (category: CategoryType) => {
+    setEditingCategory(category)
+    setShowCategoryForm(true)
+  }
 
-    try {
-      await updateCategory(editingId, {
-        name: editingName.trim(),
-        description: editingDescription.trim() || null,
-      });
-
-      showNotification({
-        type: 'saved_order',
-        title: "Success",
-        message: "Category updated successfully",
-        data: null,
-      });
-
-      setEditingId(null);
-      setEditingName("");
-      setEditingDescription("");
-    } catch (error: any) {
-      showNotification({
-        type: 'low_stock',
-        title: "Error",
-        message: error.message || "Failed to update category",
-        data: null,
-      });
-    }
+  const handleCloseForm = () => {
+    setShowCategoryForm(false)
+    setEditingCategory(null)
   }
 
   const handleDeleteCategory = async (id: string, name: string) => {
@@ -102,61 +56,33 @@ export default function CategoryManager() {
     }
   }
 
-  const startEditing = (category: CategoryType) => {
-    setEditingId(category.id);
-    setEditingName(category.name);
-    setEditingDescription(category.description || "");
-  }
-
-  const cancelEditing = () => {
-    setEditingId(null);
-    setEditingName("");
-    setEditingDescription("");
-  }
-
-  // Calculate product count for each category
+  // Fixed product count calculation
   const getCategoryProductCount = (categoryId: string) => {
-    // In a real implementation, this would count products in the category
-    // For now, we'll return a placeholder
-    return 0;
+    return products.filter(product =>
+      product.categoryId === categoryId && !product.deletedAt
+    ).length;
   }
 
   return (
     <div className="space-y-4">
-      {/* Add New Category */}
-      <Card className="p-4">
-        <h3 className="font-semibold text-foreground mb-4">Add New Category</h3>
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              placeholder="Category name"
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              disabled={loading}
-            />
-            <Input
-              placeholder="Description (optional)"
-              value={newDescription}
-              onChange={(e) => setNewDescription(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-          <Button onClick={handleAddCategory} className="gap-2" disabled={loading || !newCategory.trim()}>
-            <Plus className="w-4 h-4" />
-            Add Category
-          </Button>
-        </div>
-      </Card>
-
       {/* Categories List */}
       <Card className="p-4">
+        {/* Header with Add Category button */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Category List</h2>
+          <Button onClick={handleAddCategory} className="gap-2">
+            <Plus className="w-4 h-4" />
+            New Category
+          </Button>
+        </div>
+
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Category Name</TableHead>
                 <TableHead>Description</TableHead>
-                <TableHead className="text-right">Products</TableHead>
+                <TableHead className="text-right">Products (count)</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -180,7 +106,7 @@ export default function CategoryManager() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => startEditing(category)}
+                          onClick={() => handleEditCategory(category)}
                           className="gap-1 bg-transparent"
                           disabled={loading}
                         >
@@ -206,35 +132,12 @@ export default function CategoryManager() {
         </div>
       </Card>
 
-      {/* Edit Category Modal */}
-      {editingId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md p-6">
-            <h3 className="font-semibold text-foreground mb-4">Edit Category</h3>
-            <div className="space-y-3 mb-4">
-              <Input
-                placeholder="Category name"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                disabled={loading}
-              />
-              <Input
-                placeholder="Description (optional)"
-                value={editingDescription}
-                onChange={(e) => setEditingDescription(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={cancelEditing} disabled={loading}>
-                Cancel
-              </Button>
-              <Button onClick={handleUpdateCategory} disabled={loading || !editingName.trim()}>
-                Save
-              </Button>
-            </div>
-          </Card>
-        </div>
+      {/* Category Form Modal */}
+      {showCategoryForm && (
+        <CategoryForm
+          category={editingCategory}
+          onClose={handleCloseForm}
+        />
       )}
     </div>
   )

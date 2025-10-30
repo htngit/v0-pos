@@ -15,6 +15,7 @@ export default function SupplierList() {
     addSupplier,
     updateSupplier,
     deleteSupplier,
+    fetchSuppliers,
     searchSuppliers: storeSearchSuppliers
   } = useProductStore();
   const { showNotification } = useNotificationStore();
@@ -30,52 +31,53 @@ export default function SupplierList() {
   });
 
   useEffect(() => {
-    // In a real implementation, we would fetch suppliers from the store
-    // For now, we'll keep using mock data until the supplier management is fully implemented
-    const mockSuppliers: Supplier[] = [
-      {
-        id: "1",
-        name: "PT. Supplier Aneka",
-        phone: "021-12345678",
-        address: "Jl. Raya Kebayoran No. 123, Jakarta",
-        createdBy: "user-1",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      },
-      {
-        id: "2",
-        name: "CV. Bahan Makanan",
-        phone: "021-87654321",
-        address: "Jl. Pahlawan No. 45, Bandung",
-        createdBy: "user-1",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      },
-      {
-        id: "3",
-        name: "UD. Grosir Sembako",
-        phone: "021-55566677",
-        address: "Jl. Industri No. 78, Surabaya",
-        createdBy: "user-1",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      },
-    ];
-    setSuppliers(mockSuppliers);
-  }, []);
+    const loadSuppliers = async () => {
+      setLoading(true);
+      try {
+        await fetchSuppliers();
+        // Get the updated suppliers from the store
+        const storeState = useProductStore.getState();
+        setSuppliers(storeState.suppliers);
+      } catch (error) {
+        console.error("Error loading suppliers:", error);
+        showNotification({
+          type: 'low_stock',
+          title: "Error",
+          message: "Failed to load suppliers",
+          data: null,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filteredSuppliers = suppliers.filter(supplier => {
-    if (!searchQuery) return !supplier.deletedAt;
-    const query = searchQuery.toLowerCase();
-    return (!supplier.deletedAt) && (
-      supplier.name.toLowerCase().includes(query) ||
-      (supplier.phone && supplier.phone.toLowerCase().includes(query)) ||
-      (supplier.address && supplier.address.toLowerCase().includes(query))
+    loadSuppliers();
+
+    // Subscribe to supplier changes in the store
+    const unsubscribe = useProductStore.subscribe(
+      (state) => setSuppliers(state.suppliers)
     );
-  });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [fetchSuppliers, showNotification]);
+
+  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
+
+  // Update filtered suppliers when suppliers or search query changes
+  useEffect(() => {
+    if (searchQuery) {
+      const searchResults = storeSearchSuppliers(searchQuery).filter(supplier =>
+        !supplier.deletedAt && supplier.id && supplier.id.trim() !== '' && supplier.name && supplier.name.trim() !== ''
+      );
+      setFilteredSuppliers(searchResults);
+    } else {
+      setFilteredSuppliers(suppliers.filter(supplier =>
+        !supplier.deletedAt && supplier.id && supplier.id.trim() !== '' && supplier.name && supplier.name.trim() !== ''
+      ));
+    }
+  }, [suppliers, searchQuery, storeSearchSuppliers]);
 
   const handleAddSupplier = async () => {
     if (!formData.name.trim()) {
@@ -199,8 +201,6 @@ export default function SupplierList() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              // In a real implementation, we would call storeSearchSuppliers(e.target.value)
-              // For now, we'll keep using the local filter
             }}
             className="pl-10 h-9"
           />

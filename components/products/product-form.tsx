@@ -67,7 +67,7 @@ export default function ProductForm({ product, onClose }: ProductFormProps) {
         currentStock: Number(formData.currentStock),
         calculatedStock: null, // Will be calculated for recipe goods
         uom: formData.uom,
-        recipe: formData.type === 'recipe_goods' ? formData.recipe : null,
+        recipe: formData.type === 'recipe_goods' ? formData.recipe : [],
         createdBy: 'current-user-id', // TODO: Get from authStore
       }
 
@@ -151,7 +151,9 @@ export default function ProductForm({ product, onClose }: ProductFormProps) {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                       {categories.map((category) => {
+                       {categories
+                         .filter(category => category.id && category.id.trim() !== '' && category.name && category.name.trim() !== '')
+                         .map((category) => {
                          console.log("ProductForm: Rendering category", { id: category.id, name: category.name })
                          return (
                            <SelectItem key={category.id} value={category.id}>

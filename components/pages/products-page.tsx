@@ -34,10 +34,6 @@ export default function ProductsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Product Management</h1>
-          <Button onClick={handleAddProduct} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add Product
-          </Button>
         </div>
 
         {/* Tabs */}
@@ -48,6 +44,14 @@ export default function ProductsPage() {
           </TabsList>
 
           <TabsContent value="products" className="space-y-4">
+            {/* Products tab header with Add Product button */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Product List</h2>
+              <Button onClick={handleAddProduct} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Product
+              </Button>
+            </div>
             <ProductList onEdit={handleEditProduct} />
           </TabsContent>
 

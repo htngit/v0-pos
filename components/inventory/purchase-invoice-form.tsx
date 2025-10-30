@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Search } from "lucide-react";
 import { useProductStore } from "@/lib/stores/productStore";
 import { useNotificationStore } from "@/lib/stores/notificationStore";
+import ProductSelectionModal from "./product-selection-modal";
+import { Supplier } from "@/lib/db";
 
 // Define the interface for invoice items since it's not exported from db
 interface InvoiceItem {
@@ -20,47 +22,49 @@ interface InvoiceItem {
 }
 
 export default function PurchaseInvoiceForm({ onClose }: { onClose: () => void }) {
-  const { products, addPurchaseInvoice, fetchProducts } = useProductStore();
+  const { products, suppliers, addPurchaseInvoice, fetchProducts, fetchSuppliers } = useProductStore();
   const { showNotification } = useNotificationStore();
   const [loading, setLoading] = useState(false);
-  const [supplierName, setSupplierName] = useState("");
+  const [supplierId, setSupplierId] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
+  const [showProductModal, setShowProductModal] = useState(false);
+  
+  // Payment fields
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'non_cash'>('cash');
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
- useEffect(() => {
+  useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchSuppliers();
+  }, [fetchProducts, fetchSuppliers]);
 
-  const addInvoiceItem = () => {
-    if (!selectedProduct || !quantity || !unitPrice) {
-      showNotification({
-        type: 'low_stock',
-        title: "Error",
-        message: "Please fill all fields",
-        data: null,
-      });
-      return;
-    }
-
-    const product = products.find(p => p.id === selectedProduct);
-    if (!product) return;
-
-    const item: InvoiceItem = {
-      id: Date.now().toString(),
-      productId: selectedProduct,
+  const handleSelectProducts = (selectedProducts: any[]) => {
+    const newItems = selectedProducts.map(product => ({
+      id: `${Date.now()}-${product.id}`,
+      productId: product.id,
       productName: product.name,
-      quantity: Number(quantity),
-      unitPrice: Number(unitPrice),
-    };
-
-    setInvoiceItems([...invoiceItems, item]);
-    setSelectedProduct("");
-    setQuantity("");
-    setUnitPrice("");
+      quantity: 1, // Default quantity
+      unitPrice: product.cost || 0, // Default to cost price if available
+    }));
+    setInvoiceItems([...invoiceItems, ...newItems]);
+    setShowProductModal(false);
   };
+
+  const updateInvoiceItem = (id: string, field: 'quantity' | 'unitPrice', value: number) => {
+    setInvoiceItems(invoiceItems.map(item => {
+      if (item.id === id) {
+        const updatedItem = { ...item, [field]: value };
+        // Update total if needed
+        return updatedItem;
+      }
+      return item;
+    }));
+ };
 
   const removeInvoiceItem = (id: string) => {
     setInvoiceItems(invoiceItems.filter(item => item.id !== id));
@@ -81,23 +85,48 @@ export default function PurchaseInvoiceForm({ onClose }: { onClose: () => void }
       return;
     }
 
+    if (!supplierId) {
+      showNotification({
+        type: 'low_stock',
+        title: "Error",
+        message: "Please select a supplier",
+        data: null,
+      });
+      return;
+    }
+
     setLoading(true);
     try {
+      // Calculate payment status
+      const totalAmount = calculateSubtotal();
+      const paidAmount = Math.min(paymentAmount, totalAmount);
+      const remainingDebt = totalAmount - paidAmount;
+      let paymentStatus: 'lunas' | 'belum_lunas' | 'bayar_sebagian';
+      
+      if (paidAmount === 0) {
+        paymentStatus = 'belum_lunas';
+      } else if (paidAmount < totalAmount) {
+        paymentStatus = 'bayar_sebagian';
+      } else {
+        paymentStatus = 'lunas';
+      }
+
       await addPurchaseInvoice({
-        supplierId: "default-supplier", // In a real app, this would be selected from suppliers
+        supplierId: supplierId,
         items: invoiceItems.map(item => ({
           productId: item.productId,
           qty: item.quantity,
           unitPrice: item.unitPrice,
           total: item.quantity * item.unitPrice,
         })),
-        subtotal: calculateSubtotal(),
-        total: calculateSubtotal(), // In a real app, this might include taxes
-        paymentMethod: 'kas_outlet',
-        paymentType: 'cash',
-        status: 'paid',
-        paidAmount: calculateSubtotal(),
-        remainingDebt: 0,
+        subtotal: totalAmount,
+        total: totalAmount,
+        paymentMethod: paymentMethod === 'cash' ? 'kas_outlet' : 'bank',
+        paymentType: paymentMethod,
+        paymentStatus,
+        paidAmount: paidAmount,
+        remainingDebt: remainingDebt,
+        paymentDate: paidAmount > 0 ? new Date(paymentDate) : null,
         createdBy: 'current-user-id', // Will be replaced with actual user ID
       });
 
@@ -109,8 +138,11 @@ export default function PurchaseInvoiceForm({ onClose }: { onClose: () => void }
       });
 
       // Reset form and close
-      setSupplierName("");
+      setSupplierId("");
       setInvoiceItems([]);
+      setPaymentMethod('cash');
+      setPaymentAmount(0);
+      setPaymentDate(new Date().toISOString().split('T')[0]);
       onClose(); // Close the form after successful submission
     } catch (error: any) {
       showNotification({
@@ -125,20 +157,26 @@ export default function PurchaseInvoiceForm({ onClose }: { onClose: () => void }
   };
 
   return (
-    <Card className="p-4">
-      <CardHeader className="p-0 pb-4">
-        <CardTitle>Add Purchase Invoice</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0 space-y-4">
+    <>
+      <div className="space-y-4">
         {/* Supplier and Date */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Supplier</label>
-            <Input
-              value={supplierName}
-              onChange={(e) => setSupplierName(e.target.value)}
-              placeholder="Supplier name"
-            />
+            <Select value={supplierId} onValueChange={setSupplierId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select supplier" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers
+                  .filter(s => !s.deletedAt && s.id && s.id.trim() !== '' && s.name && s.name.trim() !== '')
+                  .map(supplier => (
+                  <SelectItem key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Invoice Date</label>
@@ -150,49 +188,12 @@ export default function PurchaseInvoiceForm({ onClose }: { onClose: () => void }
           </div>
         </div>
 
-        {/* Add Item */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Product</label>
-            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select product" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.filter(p => !p.deletedAt).map(product => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name} - {product.sku || 'No SKU'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Quantity</label>
-            <Input
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="0"
-              min="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Unit Price</label>
-            <Input
-              type="number"
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
-              placeholder="0"
-              min="0"
-            />
-          </div>
-          <div className="space-y-2 pb-2.5"> {/* pb-2.5 to align with other inputs */}
-            <Button type="button" onClick={addInvoiceItem} className="w-full gap-2" variant="outline">
-              <Plus className="w-4 h-4" />
-              Add Item
-            </Button>
-          </div>
+        {/* Select Products Button */}
+        <div className="space-y-2">
+          <Button type="button" onClick={() => setShowProductModal(true)} className="w-full gap-2" variant="outline">
+            <Plus className="w-4 h-4" />
+            Select Products
+          </Button>
         </div>
 
         {/* Items Table */}
@@ -216,8 +217,24 @@ export default function PurchaseInvoiceForm({ onClose }: { onClose: () => void }
                 invoiceItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.productName}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right">Rp {item.unitPrice.toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => updateInvoiceItem(item.id, 'quantity', Number(e.target.value))}
+                        className="w-20 text-right"
+                        min="0"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        type="number"
+                        value={item.unitPrice}
+                        onChange={(e) => updateInvoiceItem(item.id, 'unitPrice', Number(e.target.value))}
+                        className="w-32 text-right"
+                        min="0"
+                      />
+                    </TableCell>
                     <TableCell className="text-right font-medium">Rp {(item.quantity * item.unitPrice).toLocaleString("id-ID")}</TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -249,6 +266,53 @@ export default function PurchaseInvoiceForm({ onClose }: { onClose: () => void }
             </div>
           </div>
         </div>
+        
+        {/* Payment Fields */}
+        <div className="border-t pt-4 border-border space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Payment Information</h3>
+          
+          {/* Payment Method Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Payment Method</label>
+            <Select value={paymentMethod} onValueChange={(value: 'cash' | 'non_cash') => setPaymentMethod(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select payment method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Cash (Tunai)</SelectItem>
+                <SelectItem value="non_cash">Non-Tunai (Non-Cash)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Payment Amount */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Jumlah Bayar (Payment Amount)</label>
+            <Input
+              type="number"
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(Math.max(0, Number(e.target.value)))}
+              className="w-full"
+              min="0"
+              placeholder="0"
+            />
+            <p className="text-xs text-muted-foreground">
+              Total: Rp {calculateSubtotal().toLocaleString("id-ID")} | Remaining: Rp {Math.max(0, calculateSubtotal() - paymentAmount).toLocaleString("id-ID")}
+            </p>
+          </div>
+          
+          {/* Payment Date - only show if payment amount > 0 */}
+          {paymentAmount > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Payment Date</label>
+              <Input
+                type="date"
+                value={paymentDate}
+                onChange={(e) => setPaymentDate(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
 
         {/* Submit Button */}
         <div className="flex justify-end gap-2 pt-2">
@@ -259,7 +323,13 @@ export default function PurchaseInvoiceForm({ onClose }: { onClose: () => void }
             {loading ? "Saving..." : "Save Invoice"}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      <ProductSelectionModal
+        isOpen={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        onSelectProducts={handleSelectProducts}
+      />
+    </>
   );
 }

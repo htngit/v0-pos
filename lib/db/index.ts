@@ -7,7 +7,7 @@ export interface User {
   supabaseId: string;
   email: string;
   name: string;
- role: 'owner' | 'kasir';
+  role: 'owner' | 'kasir';
   pin: string; // hashed
   createdAt: Date;
   updatedAt: Date;
@@ -74,9 +74,10 @@ export interface Invoice {
   total: number;
   paymentMethod: 'kas_outlet' | 'bank';
   paymentType: 'cash' | 'non_cash';
-  status: 'paid' | 'unpaid';
+  paymentStatus: 'lunas' | 'belum_lunas' | 'bayar_sebagian'; // Payment status: Lunas, Belum Lunas, Bayar Sebagian
   paidAmount: number;
   remainingDebt: number;
+  paymentDate?: Date | null; // Date of payment
   createdBy: string; // user.id
   createdAt: Date;
   updatedAt: Date;
@@ -109,7 +110,7 @@ export interface StockWaste {
 }
 
 export interface Customer {
- id: string;
+  id: string;
   name: string;
   phone: string | null;
   gender: 'male' | 'female' | null;
@@ -130,7 +131,7 @@ export interface Transaction {
     qty: number;
     price: number;
     subtotal: number;
- }[];
+  }[];
   subtotal: number;
   discount: {
     type: 'percent' | 'nominal';
@@ -143,7 +144,7 @@ export interface Transaction {
     amount: number;
   };
   total: number;
- payments: {
+  payments: {
     method: 'cash' | 'ewallet' | 'qris';
     amount: number;
   }[];
@@ -153,15 +154,15 @@ export interface Transaction {
   paidAt: Date | null;
   createdBy: string; // user.id
   createdAt: Date;
- updatedAt: Date;
- deletedAt: Date | null;
+  updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 export interface CashierShift {
   id: string;
   openedBy: string; // user.id
   closedBy: string | null; // user.id
- openingBalance: number;
+  openingBalance: number;
   closingBalance: number | null;
   actualCash: number | null;
   variance: number | null; // actualCash - closingBalance
@@ -178,15 +179,15 @@ export interface Setting {
   id: string;
   key: string; // Unique setting key
   value: any; // JSON value
- updatedBy: string; // user.id
- updatedAt: Date;
+  updatedBy: string; // user.id
+  updatedAt: Date;
 }
 
 export interface Notification {
   id: string;
   type: 'low_stock' | 'unpaid_transaction' | 'saved_order';
   title: string;
- message: string;
+  message: string;
   data: any | null; // Related data (productId, transactionId, etc)
   read: boolean;
   createdAt: Date;
@@ -237,28 +238,28 @@ export class POSDatabase extends Dexie {
     });
 
     // Initialize database version
-        this.version(3).stores({
-          users: 'id, email, role, createdAt, updatedAt, deletedAt',
-          categories: 'id, name, createdBy, createdAt, updatedAt, deletedAt',
-          products: 'id, name, type, categoryId, sku, createdBy, createdAt, updatedAt, deletedAt',
-          suppliers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
-          invoices: 'id, invoiceNumber, supplierId, createdBy, createdAt, updatedAt, deletedAt',
-          stockOpnames: 'id, createdBy, createdAt',
-          stockWastes: 'id, productId, createdBy, createdAt',
-          customers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
-          transactions: 'id, transactionNumber, customerId, status, createdBy, createdAt, updatedAt, deletedAt, shiftId',
-          cashierShifts: 'id, openedBy, closedBy, openedAt, closedAt, status',
-          settings: 'id, key, updatedAt',
-          notifications: 'id, type, read, createdAt'
-        }).upgrade(trans => {
-          // Set shiftId to null for existing transactions that don't have the field
-          return trans.table('transactions').toCollection().modify((obj: any) => {
-            if (obj.shiftId === undefined) {
-              obj.shiftId = null;
-            }
-          });
-        });
-    
+    this.version(3).stores({
+      users: 'id, email, role, createdAt, updatedAt, deletedAt',
+      categories: 'id, name, createdBy, createdAt, updatedAt, deletedAt',
+      products: 'id, name, type, categoryId, sku, createdBy, createdAt, updatedAt, deletedAt',
+      suppliers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
+      invoices: 'id, invoiceNumber, supplierId, createdBy, createdAt, updatedAt, deletedAt',
+      stockOpnames: 'id, createdBy, createdAt',
+      stockWastes: 'id, productId, createdBy, createdAt',
+      customers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
+      transactions: 'id, transactionNumber, customerId, status, createdBy, createdAt, updatedAt, deletedAt, shiftId',
+      cashierShifts: 'id, openedBy, closedBy, openedAt, closedAt, status',
+      settings: 'id, key, updatedAt',
+      notifications: 'id, type, read, createdAt'
+    }).upgrade(trans => {
+      // Set shiftId to null for existing transactions that don't have the field
+      return trans.table('transactions').toCollection().modify((obj: any) => {
+        if (obj.shiftId === undefined) {
+          obj.shiftId = null;
+        }
+      });
+    });
+     
     // Add shiftId to invoices, stockOpnames, and stockWastes in version 4
     this.version(4).stores({
       users: 'id, email, role, createdAt, updatedAt, deletedAt',
@@ -292,6 +293,36 @@ export class POSDatabase extends Dexie {
           }
         })
       ]);
+    });
+
+    // Add paymentStatus field to invoices in version 5
+    this.version(5).stores({
+      users: 'id, email, role, createdAt, updatedAt, deletedAt',
+      categories: 'id, name, createdBy, createdAt, updatedAt, deletedAt',
+      products: 'id, name, type, categoryId, sku, createdBy, createdAt, updatedAt, deletedAt',
+      suppliers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
+      invoices: 'id, invoiceNumber, supplierId, createdBy, createdAt, updatedAt, deletedAt, shiftId, paymentStatus',
+      stockOpnames: 'id, createdBy, createdAt, shiftId',
+      stockWastes: 'id, productId, createdBy, createdAt, shiftId',
+      customers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
+      transactions: 'id, transactionNumber, customerId, status, createdBy, createdAt, updatedAt, deletedAt, shiftId',
+      cashierShifts: 'id, openedBy, closedBy, openedAt, closedAt, status',
+      settings: 'id, key, updatedAt',
+      notifications: 'id, type, read, createdAt'
+    }).upgrade((trans: any) => {
+      // Set paymentStatus to 'belum_lunas' for existing invoices that don't have the field
+      return trans.table('invoices').toCollection().modify((obj: any) => {
+        if (obj.paymentStatus === undefined) {
+          obj.paymentStatus = 'belum_lunas';
+        }
+        // Also ensure remainingDebt is calculated properly
+        if (obj.remainingDebt === undefined) {
+          obj.remainingDebt = obj.total - (obj.paidAmount || 0);
+        }
+        if (obj.paymentDate === undefined) {
+          obj.paymentDate = null;
+        }
+      });
     });
   }
 }
