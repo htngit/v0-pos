@@ -14,6 +14,7 @@ import { useCashierStore } from "@/lib/stores/cashierStore"
 export default function SummaryOrder() {
   const {
     cart,
+    savedOrders,
     selectedCustomer,
     removeFromCart,
     updateQuantity,
@@ -66,11 +67,16 @@ export default function SummaryOrder() {
     <div className="h-full flex flex-col bg-card rounded-lg border border-border overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-2 gap-2 p-3 border-b border-border flex-shrink-0">
-        <Button variant="outline" className="text-sm bg-transparent" onClick={() => setIsOrderListOpen(true)}>
-          Daftar Order
+        <Button variant="outline" className="text-sm bg-transparent relative" onClick={() => setIsOrderListOpen(true)}>
+          <span>Daftar Order</span>
+          {savedOrders.length > 0 && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="h-2 w-2 bg-red-600 rounded-full"></span>
+            </span>
+          )}
         </Button>
         <Button variant="outline" className="text-sm bg-transparent" onClick={() => setIsCustomerModalOpen(true)}>
-          {selectedCustomer ? `Pelanggan: ${selectedCustomer.name}` : 'Pilih Pelanggan'}
+          {selectedCustomer ? selectedCustomer.name : 'Pilih Pelanggan'}
         </Button>
       </div>
 

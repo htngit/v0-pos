@@ -17,7 +17,8 @@ interface AuthState {
   unlockScreen: (pin: string) => Promise<boolean>;
   initializeAuth: () => Promise<void>;
   updateOnlineStatus: (isOnline: boolean) => void;
- refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+  updateUserPin: (pin: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -351,6 +352,28 @@ export const useAuthStore = create<AuthState>()(
       
       updateOnlineStatus: (isOnline) => {
         set({ isOnline });
+      },
+
+      updateUserPin: async (pin) => {
+        const { user } = get();
+        if (!user) throw new Error('No user found');
+
+        try {
+          // Update user in local database
+          const updatedUser = {
+            ...user,
+            pin,
+            updatedAt: new Date()
+          };
+          
+          await db.users.put(updatedUser);
+          
+          // Update store state
+          set({ user: updatedUser });
+        } catch (error) {
+          console.error('Error updating PIN:', error);
+          throw error;
+        }
       },
     }),
     {

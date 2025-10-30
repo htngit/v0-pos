@@ -5,6 +5,7 @@ import { PaymentService } from '../services/paymentService';
 import { SavedOrderService } from '../services/savedOrderService';
 import { CashierShiftService } from '../services/cashierShiftService';
 import { useShiftStore } from './shiftStore';
+import { useAuthStore } from './authStore';
 
 interface CartItem {
   productId: string;
@@ -106,6 +107,12 @@ export const useCashierStore = create<CashierState>((set, get) => ({
    const { cart, selectedCustomer } = get();
    if (cart.length === 0) return;
 
+   // Get current user for createdBy field
+   const { user } = useAuthStore.getState();
+   if (!user?.id) {
+     throw new Error('User not authenticated. Please log in to save orders.');
+   }
+
    // Calculate totals
    const subtotal = get().calculateSubtotal();
    const tax = get().calculateTax();
@@ -132,10 +139,11 @@ export const useCashierStore = create<CashierState>((set, get) => ({
              change: 0,
              status: 'saved',
              savedAt: new Date(),
-             createdBy: 'current-user-id', // TODO: Get from authStore
+             createdBy: user.id, // Get current user ID from auth store
            };
 
    try {
+     console.log('Saving order with status:', transactionData.status);
      // Use the new service to save the transaction
      const savedTransaction = await SavedOrderService.saveOrder(transactionData);
 
@@ -143,7 +151,8 @@ export const useCashierStore = create<CashierState>((set, get) => ({
      set(state => ({
        savedOrders: [...state.savedOrders, savedTransaction],
        cart: [],
-       selectedCustomer: null
+       selectedCustomer: null,
+       activeTransaction: null // Clear active transaction after saving
      }));
    } catch (error) {
      console.error('Failed to save order:', error);
@@ -155,6 +164,7 @@ export const useCashierStore = create<CashierState>((set, get) => ({
     const savedOrder = await SavedOrderService.getSavedOrderById(orderId);
     
     if (savedOrder) {
+      console.log('Loading saved order:', orderId, 'Status:', savedOrder.status);
       set({
         cart: savedOrder.items.map(item => ({
           productId: item.productId,
@@ -164,7 +174,9 @@ export const useCashierStore = create<CashierState>((set, get) => ({
           subtotal: item.subtotal,
         })),
         selectedCustomer: savedOrder.customerId ? { id: savedOrder.customerId } as Customer : null,
+        activeTransaction: savedOrder, // Set activeTransaction to track the loaded saved order
       });
+      console.log('Saved order loaded, activeTransaction set:', savedOrder.id);
     }
   },
   
@@ -196,8 +208,14 @@ export const useCashierStore = create<CashierState>((set, get) => ({
   },
   
   checkout: async (payment) => {
-    const { cart, selectedCustomer } = get();
+    const { cart, selectedCustomer, activeTransaction } = get();
     if (cart.length === 0) return;
+    
+    // Get current user for createdBy field
+    const { user } = useAuthStore.getState();
+    if (!user?.id) {
+      throw new Error('User not authenticated. Please log in to process payments.');
+    }
     
     // Calculate totals
     const subtotal = get().calculateSubtotal();
@@ -211,52 +229,82 @@ export const useCashierStore = create<CashierState>((set, get) => ({
       payment.method === 'ewallet' ? 'ewallet' :
       'qris';
     
-    // Create transaction object using the new service
-         const { currentShiftId } = useShiftStore.getState();
-         const transactionData: Omit<Transaction, 'id' | 'transactionNumber' | 'createdAt' | 'updatedAt' | 'deletedAt'> = {
-           customerId: selectedCustomer?.id || null,
-           shiftId: currentShiftId || null, // Include the current shift ID if available
-           items: cart.map(item => ({
-             productId: item.productId,
-             name: item.name,
-             qty: item.qty,
-             price: item.price,
-             subtotal: item.subtotal
-           })),
-           subtotal,
-           discount: { type: 'nominal', value: 0, amount: discount },
-           tax: { enabled: true, rate: 0, amount: tax },
-           total,
-           payments: [],
-           change: 0, // Will be calculated by the service
-           status: 'paid',
-           savedAt: null,
-           paidAt: null, // Need to include this
-           createdBy: 'current-user-id', // TODO: Get from authStore
-         };
-    
     try {
-      // Create the transaction first
-      const newTransaction = await TransactionService.create(transactionData);
+      let transactionId: string;
+      
+      console.log('Checkout started. ActiveTransaction:', activeTransaction?.id, 'Status:', activeTransaction?.status);
+      
+      // Check if we have an activeTransaction from a loaded saved order
+      if (activeTransaction && activeTransaction.status === 'saved') {
+        console.log('Processing saved order checkout, ID:', activeTransaction.id);
+        // Use the existing transaction ID from the saved order
+        transactionId = activeTransaction.id;
+        
+        // Process payment using the saved order service
+        const paymentResult = await SavedOrderService.convertToPaidOrder(
+          transactionId,
+          paymentMethod,
+          payment.amount
+        );
+        
+        if (!paymentResult) {
+          throw new Error('Failed to process payment for saved order');
+        }
+        
+        console.log('Saved order payment successful');
+      } else {
+        console.log('Creating new transaction for checkout');
+        // Create a new transaction for fresh orders
+        const { currentShiftId } = useShiftStore.getState();
+        const transactionData: Omit<Transaction, 'id' | 'transactionNumber' | 'createdAt' | 'updatedAt' | 'deletedAt'> = {
+          customerId: selectedCustomer?.id || null,
+          shiftId: currentShiftId || null,
+          items: cart.map(item => ({
+            productId: item.productId,
+            name: item.name,
+            qty: item.qty,
+            price: item.price,
+            subtotal: item.subtotal
+          })),
+          subtotal,
+          discount: { type: 'nominal', value: 0, amount: discount },
+          tax: { enabled: true, rate: 0, amount: tax },
+          total,
+          payments: [],
+          change: 0,
+          status: 'paid',
+          savedAt: null,
+          paidAt: null,
+          createdBy: user.id,
+        };
+        
+        // Create the transaction first
+        const newTransaction = await TransactionService.create(transactionData);
+        transactionId = newTransaction.id;
 
-      // Process the payment using the payment service
-      const paymentResult = await PaymentService.processPayment(newTransaction.id, {
-        method: paymentMethod,
-        amount: payment.amount
-      });
+        // Process the payment using the payment service
+        const paymentResult = await PaymentService.processPayment(transactionId, {
+          method: paymentMethod,
+          amount: payment.amount
+        });
 
-      if (!paymentResult.success) {
-        throw new Error(paymentResult.message);
+        if (!paymentResult.success) {
+          throw new Error(paymentResult.message);
+        }
+        
+        console.log('New transaction payment successful');
       }
 
-      // Clear cart
+      // Clear cart and reset state
       set({
         cart: [],
-        selectedCustomer: null
+        selectedCustomer: null,
+        activeTransaction: null // Clear activeTransaction after successful checkout
       });
+      
+      console.log('Checkout completed successfully');
     } catch (error) {
       console.error('Failed to checkout:', error);
-      // TODO: Show user-friendly error message using uiStore
       throw error;
     }
   },

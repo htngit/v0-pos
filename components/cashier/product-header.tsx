@@ -8,6 +8,7 @@ import NotificationPanel from "@/components/notifications/notification-panel"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Search } from "lucide-react"
 import SpaceViewModal from "@/components/cashier/space-view-modal"
+import LockConfirmationModal from "@/components/security/lock-confirmation-modal"
 import { useAuthStore } from "@/lib/stores/authStore";
 // TODO: Import and use offline detection hooks
 // import { useOffline } from "@/lib/hooks/useOffline"
@@ -23,6 +24,7 @@ export default function ProductHeader({ searchQuery, onSearchChange, viewMode, o
   const [showNotifications, setShowNotifications] = useState(false)
   const [isOnline, setIsOnline] = useState(true)
   const [showSpaceView, setShowSpaceView] = useState(false)
+  const [showLockModal, setShowLockModal] = useState(false)
   
   // Generate stable IDs to prevent hydration mismatches
   const dropdownTriggerId = useId()
@@ -41,8 +43,11 @@ export default function ProductHeader({ searchQuery, onSearchChange, viewMode, o
   }
 
   const handleLockScreen = () => {
-    // TODO: Show PIN lock screen
-    console.log("Lock screen")
+    setShowLockModal(true)
+  }
+
+  const handleLockConfirm = () => {
+    setShowLockModal(false)
   }
 
   return (
@@ -130,6 +135,11 @@ export default function ProductHeader({ searchQuery, onSearchChange, viewMode, o
       </div>
 
       <SpaceViewModal isOpen={showSpaceView} onClose={() => setShowSpaceView(false)} />
+      <LockConfirmationModal
+        isOpen={showLockModal}
+        onClose={() => setShowLockModal(false)}
+        onLock={handleLockConfirm}
+      />
     </>
   )
 }

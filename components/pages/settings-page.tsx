@@ -6,6 +6,7 @@ import AccountSettings from "@/components/settings/account-settings"
 import BusinessSettings from "@/components/settings/business-settings"
 import DataHealth from "@/components/settings/data-health"
 import LanguageSettings from "@/components/settings/language-settings"
+import CashierSettings from "@/components/settings/cashier-settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function SettingsPage() {
@@ -17,11 +18,12 @@ export default function SettingsPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="business" className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-6">
+          <TabsList className="grid w-full max-w-4xl grid-cols-7">
             <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="receipt">Receipt</TabsTrigger>
             <TabsTrigger value="tax">Tax</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="cashier">Kasir</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="language">Language</TabsTrigger>
           </TabsList>
@@ -40,6 +42,10 @@ export default function SettingsPage() {
 
           <TabsContent value="account" className="space-y-4">
             <AccountSettings />
+          </TabsContent>
+
+          <TabsContent value="cashier" className="space-y-4">
+            <CashierSettings />
           </TabsContent>
 
           <TabsContent value="data" className="space-y-4">

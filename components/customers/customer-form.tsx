@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useCustomerStore } from "@/lib/stores/customerStore"
 import { useAuthStore } from "@/lib/stores/authStore"
 import { Customer } from "@/lib/db"
@@ -15,9 +15,10 @@ import CustomerTransactionHistory from "./customer-transaction-history";
 interface CustomerFormProps {
   customer: Customer | null
   onClose: () => void
+  isOpen?: boolean
 }
 
-export default function CustomerForm({ customer, onClose }: CustomerFormProps) {
+export default function CustomerForm({ customer, onClose, isOpen }: CustomerFormProps) {
   const [formData, setFormData] = useState({
     name: customer?.name || "",
     phone: customer?.phone || "",
@@ -105,16 +106,13 @@ export default function CustomerForm({ customer, onClose }: CustomerFormProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 max-h-[90vh] overflow-auto">
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border">
-          <CardTitle>{customer ? "Edit Customer" : "Add New Customer"}</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} disabled={loading}>
-            <X className="w-4 h-4" />
-          </Button>
-        </CardHeader>
+    <Dialog open={isOpen ?? true} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-auto p-6">
+        <DialogHeader>
+          <DialogTitle>{customer ? "Edit Customer" : "Add New Customer"}</DialogTitle>
+        </DialogHeader>
 
-        <CardContent className="pt-6 space-y-6">
+        <div className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Full Name *</label>
@@ -190,8 +188,8 @@ export default function CustomerForm({ customer, onClose }: CustomerFormProps) {
               <CustomerTransactionHistory customerId={customer.id} />
             </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

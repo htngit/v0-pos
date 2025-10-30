@@ -43,7 +43,10 @@ export const useLockScreenStore = create<LockScreenState>()(
           // In a real implementation, you would validate the PIN against the stored hash
           // For this implementation, we'll check if the entered PIN matches the user's PIN
           // In a real app, this would be a secure hash comparison
-          const isValid = pin === user.pin; // This would be replaced with proper hash comparison
+          // Check if PIN matches user's stored PIN or default PIN
+          const storedPin = user.pin || '' // Empty means use default
+          const defaultPin = '1234'
+          const isValid = pin === storedPin || (storedPin === '' && pin === defaultPin)
           
           if (isValid) {
             set({ 
