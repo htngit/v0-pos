@@ -6,7 +6,6 @@ import {
   NotificationService,
   useNotificationStore
 } from "@/lib/services/notificationService";
-import toast from "react-hot-toast";
 
 interface NotificationProviderProps {
   children: React.ReactNode;
@@ -30,20 +29,9 @@ export default function NotificationProvider({ children }: NotificationProviderP
     initNotifications();
   }, [initialize]);
 
-  // Show browser notifications for new notifications
-  useEffect(() => {
-    if (notifications.length > 0 && unreadCount > 0) {
-      const latestNotification = notifications[0];
-      
-      // Only show notification if it's unread
-      if (!latestNotification.read) {
-        // Show toast notification
-        toast(latestNotification.message, {
-          duration: 5000,
-        });
-      }
-    }
-  }, [notifications, unreadCount, toast]);
+  // Removed automatic toast triggering to prevent duplicate toasts
+  // Toast notifications are now handled explicitly by components via showNotification
+  // This prevents the same notification from being shown multiple times during navigation
 
   const markAsRead = async (id: string) => {
     try {

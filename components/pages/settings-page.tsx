@@ -19,13 +19,13 @@ export default function SettingsPage() {
         {/* Tabs */}
         <Tabs defaultValue="business" className="w-full">
           <TabsList className="grid w-full max-w-4xl grid-cols-7">
-            <TabsTrigger value="business">Business</TabsTrigger>
-            <TabsTrigger value="receipt">Receipt</TabsTrigger>
-            <TabsTrigger value="tax">Tax</TabsTrigger>
-            <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="business">Bisnis</TabsTrigger>
+            <TabsTrigger value="receipt">Struk</TabsTrigger>
+            <TabsTrigger value="tax">Pajak</TabsTrigger>
+            <TabsTrigger value="account">Akun</TabsTrigger>
             <TabsTrigger value="cashier">Kasir</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
-            <TabsTrigger value="language">Language</TabsTrigger>
+            <TabsTrigger value="language">Bahasa</TabsTrigger>
           </TabsList>
 
           <TabsContent value="business" className="space-y-4">

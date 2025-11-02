@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,8 @@ import OrderListModal from "./order-list-modal"
 import CustomerSelectionModal from "./customer-selection-modal"
 import CheckoutModal from "./checkout-modal"
 import { useCashierStore } from "@/lib/stores/cashierStore"
+import { useSettingsStore } from "@/lib/stores/settingsStore"
+import { TaxSettings } from "@/lib/types/settings"
 
 export default function SummaryOrder() {
   const {
@@ -24,16 +26,30 @@ export default function SummaryOrder() {
     saveOrder
   } = useCashierStore()
 
+  const { getSetting } = useSettingsStore()
+  
   const [discountPercent, setDiscountPercent] = useState(0)
-  const [taxEnabled, setTaxEnabled] = useState(true)
+  const [taxSettings, setTaxSettings] = useState<TaxSettings>({
+    taxEnabled: true,
+    taxRate: 10,
+    taxTiming: 'after_discount'
+  })
   const [isOrderListOpen, setIsOrderListOpen] = useState(false)
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
+  // Load tax settings from database
+  useEffect(() => {
+    const taxData = getSetting('tax')
+    if (taxData) {
+      setTaxSettings(taxData)
+    }
+  }, [getSetting])
+
   const subtotal = calculateSubtotal()
   const discountAmount = (subtotal * discountPercent) / 100
-  const taxAmount = taxEnabled ? ((subtotal - discountAmount) * 10) / 100 : 0
+  const taxAmount = taxSettings.taxEnabled ? ((subtotal - discountAmount) * taxSettings.taxRate) / 100 : 0
   const total = subtotal - discountAmount + taxAmount
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
@@ -159,9 +175,9 @@ export default function SummaryOrder() {
             </div>
           )}
 
-          {taxEnabled && (
+          {taxSettings.taxEnabled && (
             <div className="flex justify-between text-muted-foreground">
-              <span>Tax (10%)</span>
+              <span>Tax ({taxSettings.taxRate}%)</span>
               <span>Rp {taxAmount.toLocaleString("id-ID")}</span>
             </div>
           )}

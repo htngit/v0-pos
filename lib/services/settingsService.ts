@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { Setting } from '@/lib/db/index';
-import { 
-  AllSettings, 
+import {
+  AllSettings,
   SettingKey,
   receiptSettingsSchema,
   taxSettingsSchema,
@@ -9,7 +9,8 @@ import {
   accountSettingsSchema,
   generalSettingsSchema,
   lockScreenSettingsSchema,
-  exportSettingsSchema
+  exportSettingsSchema,
+  dataHealthSettingsSchema
 } from '@/lib/types/settings';
 import { z } from 'zod';
 import { logError, handleAppError } from '@/lib/utils/errorHandler';
@@ -63,6 +64,12 @@ class SettingsService {
     export: {
       exportFormat: 'excel',
       exportPath: undefined,
+    },
+    dataHealth: {
+      autoArchiveEnabled: false,
+      autoArchiveDays: 365,
+      autoOptimizeEnabled: false,
+      autoOptimizeInterval: 30,
     },
   };
 
@@ -229,6 +236,8 @@ class SettingsService {
         return lockScreenSettingsSchema;
       case 'export':
         return exportSettingsSchema;
+      case 'dataHealth':
+        return dataHealthSettingsSchema;
       default:
         return null;
     }

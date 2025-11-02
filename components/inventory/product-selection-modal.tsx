@@ -86,7 +86,7 @@ export default function ProductSelectionModal({
       <Card className="w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <CardHeader className="p-4 border-b">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Select Products</CardTitle>
+            <CardTitle className="text-lg">Pilih Produk</CardTitle>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -131,16 +131,16 @@ export default function ProductSelectionModal({
                       onCheckedChange={toggleSelectAll}
                     />
                   </TableHead>
-                  <TableHead>Product Name</TableHead>
+                  <TableHead>Nama Produk</TableHead>
                   <TableHead>SKU</TableHead>
-                  <TableHead>Current Stock</TableHead>
+                  <TableHead>Stok Saat Ini</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                      No products found
+                      Tidak menemukan produk
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -174,7 +174,7 @@ export default function ProductSelectionModal({
               onClick={handleConfirmSelection}
               disabled={selectedProductIds.size === 0}
             >
-              Select ({selectedProductIds.size})
+              Pilih ({selectedProductIds.size})
             </Button>
           </div>
         </CardContent>

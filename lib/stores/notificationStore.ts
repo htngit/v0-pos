@@ -4,12 +4,12 @@ import toast from 'react-hot-toast';
 
 interface Notification {
   id: string;
-  type: 'low_stock' | 'unpaid_transaction' | 'saved_order';
+  type: 'low_stock' | 'unpaid_transaction' | 'saved_order' | 'account_update' | 'account_error';
   title: string;
   message: string;
   data: any | null;
   read: boolean;
- createdAt: Date;
+  createdAt: Date;
 }
 
 interface NotificationState {
@@ -102,7 +102,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     // Add to store
     get().addNotification(notificationData);
     
-    // Show toast notification
+    // Show toast notification based on type
     const { title, message, type } = notificationData;
     
     switch (type) {
@@ -124,6 +124,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           position: 'top-right',
         });
         break;
+      case 'account_update':
+        toast.success(`${title}: ${message}`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+        break;
+      case 'account_error':
+        toast.error(`${title}: ${message}`, {
+          duration: 5000,
+          position: 'top-right',
+        });
+        break;
       default:
         toast(`${title}: ${message}`, {
           duration: 5000,
@@ -131,7 +143,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         });
         break;
     }
- },
+  },
   
   initializeNotifications: async () => {
     await get().fetchNotifications();

@@ -127,7 +127,7 @@ export default function InvoiceDetails({ onNewInvoiceClick }: InvoiceDetailsProp
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Purchase Invoices</CardTitle>
+          <CardTitle>Faktur Pembelian</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center items-center py-8">
@@ -143,13 +143,13 @@ export default function InvoiceDetails({ onNewInvoiceClick }: InvoiceDetailsProp
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex items-center space-x-2">
-            <CardTitle>Purchase Invoices</CardTitle>
+            <CardTitle>Faktur Pembelian</CardTitle>
           </div>
           <div className="flex items-center space-x-2">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search invoices..."
+                placeholder="Cari Faktur..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 w-64"
@@ -178,14 +178,14 @@ export default function InvoiceDetails({ onNewInvoiceClick }: InvoiceDetailsProp
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Invoice Number</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead className="text-right">Total Amount</TableHead>
-                  <TableHead className="text-right">Payment Amount</TableHead>
-                  <TableHead>Payment Status</TableHead>
-                  <TableHead>Payment Method</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>No Invoice</TableHead>
+                  <TableHead>Tanggal</TableHead>
+                  <TableHead>Pemasok</TableHead>
+                  <TableHead className="text-right">Jumlah Total</TableHead>
+                  <TableHead className="text-right">Jumlah Pembayaran</TableHead>
+                  <TableHead>Status Pembayaran</TableHead>
+                  <TableHead>Metode Pembayaran</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

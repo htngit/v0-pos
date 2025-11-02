@@ -141,7 +141,7 @@ export default function CashierSettings() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Screen Lock Status</p>
+              <p className="font-medium">Status Kunci Layar</p>
               <p className="text-sm text-muted-foreground">
                 {isLocked ? "Layar terkunci" : "Layar tidak terkunci"}
               </p>
@@ -149,14 +149,14 @@ export default function CashierSettings() {
             <div className={`flex items-center gap-2 ${isLocked ? 'text-destructive' : 'text-green-500'}`}>
               {isLocked ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
               <span className="text-sm font-medium">
-                {isLocked ? "Locked" : "Unlocked"}
+                {isLocked ? "Terkunci" : "Terbuka"}
               </span>
             </div>
           </div>
           
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">PIN Protection</p>
+              <p className="font-medium">Perlindungan PIN</p>
               <p className="text-sm text-muted-foreground">
                 {isPinEnabled ? "Aktif" : "Nonaktif"}
               </p>
@@ -164,7 +164,7 @@ export default function CashierSettings() {
             <div className={`flex items-center gap-2 ${isPinEnabled ? 'text-green-500' : 'text-muted-foreground'}`}>
               <Lock className="w-4 h-4" />
               <span className="text-sm font-medium">
-                {isPinEnabled ? "Enabled" : "Disabled"}
+                {isPinEnabled ? "Aktif" : "Non-Aktif"}
               </span>
             </div>
           </div>

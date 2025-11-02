@@ -185,7 +185,7 @@ export interface Setting {
 
 export interface Notification {
   id: string;
-  type: 'low_stock' | 'unpaid_transaction' | 'saved_order';
+  type: 'low_stock' | 'unpaid_transaction' | 'saved_order' | 'account_update' | 'account_error';
   title: string;
   message: string;
   data: any | null; // Related data (productId, transactionId, etc)
@@ -223,6 +223,32 @@ export class POSDatabase extends Dexie {
       cashierShifts: 'id, openedBy, status, openedAt, closedAt',
       settings: 'id, key, updatedAt',
       notifications: 'id, type, read, createdAt',
+    });
+
+    // Add value and updatedBy fields to settings table
+    this.version(6).stores({
+      users: 'id, email, role, createdAt, updatedAt, deletedAt',
+      categories: 'id, name, createdBy, createdAt, updatedAt, deletedAt',
+      products: 'id, name, type, categoryId, sku, createdBy, createdAt, updatedAt, deletedAt',
+      suppliers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
+      invoices: 'id, invoiceNumber, supplierId, createdBy, createdAt, updatedAt, deletedAt, shiftId, paymentStatus',
+      stockOpnames: 'id, createdBy, createdAt, shiftId',
+      stockWastes: 'id, productId, createdBy, createdAt, shiftId',
+      customers: 'id, name, phone, createdBy, createdAt, updatedAt, deletedAt',
+      transactions: 'id, transactionNumber, customerId, status, createdBy, createdAt, updatedAt, deletedAt, shiftId',
+      cashierShifts: 'id, openedBy, closedBy, openedAt, closedAt, status',
+      settings: 'id, key, updatedAt',
+      notifications: 'id, type, read, createdAt'
+    }).upgrade((trans: any) => {
+      // Add value and updatedBy fields to existing settings records
+      return trans.table('settings').toCollection().modify((obj: any) => {
+        if (obj.value === undefined) {
+          obj.value = {};
+        }
+        if (obj.updatedBy === undefined) {
+          obj.updatedBy = 'system';
+        }
+      });
     });
 
     // Create indexes for soft deletes

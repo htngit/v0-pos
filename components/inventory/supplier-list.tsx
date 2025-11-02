@@ -217,16 +217,16 @@ export default function SupplierList() {
           <Table>
             <TableHeader className="bg-muted/50 sticky top-0">
               <TableRow className="hover:bg-transparent border-b border-border">
-                <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Supplier Name</TableHead>
-                <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Contact</TableHead>
-                <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Address</TableHead>
-                <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Actions</TableHead>
+                <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Nama Pemasok</TableHead>
+                <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Kontak</TableHead>
+                <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Alamat</TableHead>
+                <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredSuppliers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No suppliers found</TableCell>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Pemasok Tidak ditemukan</TableCell>
                 </TableRow>
               ) : (
                 filteredSuppliers.map((supplier) => (
@@ -267,10 +267,10 @@ export default function SupplierList() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-md p-6">
-            <h3 className="font-semibold text-foreground mb-4">{editingSupplier ? "Edit Supplier" : "Add New Supplier"}</h3>
+            <h3 className="font-semibold text-foreground mb-4">{editingSupplier ? "Edit Pemasok" : "Tambah Pemasok"}</h3>
             <div className="space-y-3 mb-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Supplier Name *</label>
+                <label className="text-sm font-medium text-foreground">Nama Pemasok *</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -278,7 +278,7 @@ export default function SupplierList() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Phone</label>
+                <label className="text-sm font-medium text-foreground">No Telp</label>
                 <Input
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -286,7 +286,7 @@ export default function SupplierList() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Address</label>
+                <label className="text-sm font-medium text-foreground">Alamat</label>
                 <Input
                   value={formData.address}
                   onChange={(e) => setFormData({...formData, address: e.target.value})}

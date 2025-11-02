@@ -26,16 +26,36 @@ export class CalculationService {
   }
 
   // Calculate tax amount
-  static calculateTax(subtotal: number, discountAmount: number, tax: { enabled: boolean; rate: number }): number {
+  static calculateTax(subtotal: number, discountAmount: number, tax: { enabled: boolean; rate: number; timing?: 'before_discount' | 'after_discount' | 'included' }): number {
     if (!tax.enabled) return 0;
-    const baseAmount = subtotal - discountAmount;
-    return (baseAmount * tax.rate) / 10;
+    
+    let baseAmount = subtotal;
+    
+    // Apply tax timing logic
+    if (tax.timing === 'before_discount' || !tax.timing) {
+      // Tax calculated before discount
+      baseAmount = subtotal;
+    } else if (tax.timing === 'after_discount') {
+      // Tax calculated after discount
+      baseAmount = subtotal - discountAmount;
+    } else if (tax.timing === 'included') {
+      // Tax is already included in the price
+      baseAmount = subtotal;
+    }
+    
+    return (baseAmount * tax.rate) / 100;
   }
 
   // Calculate total amount
-  static calculateTotal(subtotal: number, discount: { type: 'percent' | 'nominal'; value: number }, tax: { enabled: boolean; rate: number }): number {
+  static calculateTotal(subtotal: number, discount: { type: 'percent' | 'nominal'; value: number }, tax: { enabled: boolean; rate: number; timing?: 'before_discount' | 'after_discount' | 'included' }): number {
     const discountAmount = this.calculateDiscount(subtotal, discount);
     const taxAmount = this.calculateTax(subtotal, discountAmount, tax);
+    
+    // Handle included tax case - tax is already in the subtotal
+    if (tax.timing === 'included' && tax.enabled) {
+      return subtotal - discountAmount;
+    }
+    
     return subtotal - discountAmount + taxAmount;
   }
 

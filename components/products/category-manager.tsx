@@ -80,10 +80,10 @@ export default function CategoryManager() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Category Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Products (count)</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Nama Kategori</TableHead>
+                <TableHead>Deskripsi</TableHead>
+                <TableHead className="text-right">Produk (count)</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -93,7 +93,7 @@ export default function CategoryManager() {
                 </TableRow>
               ) : categories.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No categories found</TableCell>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Kategori tidak ditemukan</TableCell>
                 </TableRow>
               ) : (
                 categories.map((category) => (

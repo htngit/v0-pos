@@ -42,7 +42,7 @@ export default function StockList() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or SKU..."
+              placeholder="Cari berdasarkan nama atau SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-9"
@@ -53,7 +53,7 @@ export default function StockList() {
             onChange={(e) => setSelectedCategory(e.target.value || null)}
             className="border border-input bg-background rounded-md px-3 py-2 text-sm h-9 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
-            <option value="">All Categories</option>
+            <option value="">Semoga Kategori</option>
             {categories.map(categoryId => {
               // Find the category name from the product list
               const categoryProduct = products.find(p => p.categoryId === categoryId);
@@ -71,13 +71,13 @@ export default function StockList() {
         <Table>
           <TableHeader className="bg-muted/50 sticky top-0">
             <TableRow className="hover:bg-transparent border-b border-border">
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Product</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Produk</TableHead>
               <TableHead className="h-8 px-3 py-1 text-xs font-semibold">SKU</TableHead>
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Current Stock</TableHead>
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Min Stock</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Stok Saat Ini</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Min Stok</TableHead>
               <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Unit</TableHead>
               <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Status</TableHead>
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Last Updated</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Update Terakhir</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

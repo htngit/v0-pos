@@ -3,14 +3,15 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// Removed Switch and Label imports as they don't exist in the UI components
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { 
-  Save, 
-  Database, 
-  Archive, 
-  RefreshCw, 
-  AlertTriangle, 
+import {
+  Save,
+  Database,
+  Archive,
+  RefreshCw,
+  AlertTriangle,
   CheckCircle,
   HardDrive,
   Trash2
@@ -27,6 +28,7 @@ interface DataHealthSettingsProps {
 export default function DataHealthSettings({ onArchiveComplete, onOptimizeComplete }: DataHealthSettingsProps) {
   const { getSetting, updateSetting, isLoading } = useSettingsStore();
   const { user } = useAuthStore();
+  const [localLoading, setLocalLoading] = useState(false);
   const [settings, setSettings] = useState({
     autoArchiveEnabled: false,
     autoArchiveDays: 365,
@@ -75,14 +77,26 @@ export default function DataHealthSettings({ onArchiveComplete, onOptimizeComple
     e.preventDefault();
     if (!user) return;
     
+    setLocalLoading(true);
+    
     try {
       await updateSetting('dataHealth', settings, user.id);
+      
+      // Wait minimum 1 second after successful save
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       setSuccess("Data health settings saved successfully");
       setError(null);
     } catch (error) {
       console.error("Error saving data health settings:", error);
+      
       setError("Failed to save data health settings");
       setSuccess(null);
+    } finally {
+      // Wait minimum 1 second total and then clear loading state
+      setTimeout(() => {
+        setLocalLoading(false);
+      }, 1000);
     }
   };
 
@@ -359,9 +373,9 @@ export default function DataHealthSettings({ onArchiveComplete, onOptimizeComple
             
             {/* Save Button */}
             <div className="flex justify-end pt-4 border-t border-border">
-              <Button type="submit" className="gap-2 bg-primary hover:bg-primary/90" disabled={isLoading}>
+              <Button type="submit" className="gap-2 bg-primary hover:bg-primary/90" disabled={localLoading}>
                 <Save className="w-4 h-4" />
-                {isLoading ? 'Saving...' : 'Save Settings'}
+                {localLoading ? 'Menyimpan...' : 'Save Settings'}
               </Button>
             </div>
           </form>

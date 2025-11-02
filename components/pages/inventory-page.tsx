@@ -6,6 +6,9 @@ import StockList from "@/components/inventory/stock-list"
 import PurchaseInvoiceForm from "@/components/inventory/purchase-invoice-form"
 import StockOpnameForm from "@/components/inventory/stock-opname-form"
 import StockWasteForm from "@/components/inventory/stock-waste-form"
+import StockOpnameHistory from "@/components/inventory/stock-opname-history"
+import StockWasteHistory from "@/components/inventory/stock-waste-history"
+import StockMovementTracker from "@/components/inventory/stock-movement-tracker"
 import SupplierList from "@/components/inventory/supplier-list"
 import InvoiceDetails from "@/components/inventory/invoice-details"
 import { Button } from "@/components/ui/button"
@@ -49,12 +52,13 @@ export default function InventoryPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
-            <TabsTrigger value="stock">Stock</TabsTrigger>
-            <TabsTrigger value="invoices">Invoices</TabsTrigger>
-            <TabsTrigger value="opname">Opname</TabsTrigger>
-            <TabsTrigger value="waste">Waste</TabsTrigger>
-            <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
+          <TabsList className="grid w-full max-w-6xl grid-cols-6">
+            <TabsTrigger value="stock">Stok</TabsTrigger>
+            <TabsTrigger value="invoices">Faktur Pembelian</TabsTrigger>
+            <TabsTrigger value="opname">Stok Opname</TabsTrigger>
+            <TabsTrigger value="waste">Buang Stok</TabsTrigger>
+            <TabsTrigger value="movements">Pergerakan Stok</TabsTrigger>
+            <TabsTrigger value="suppliers">Pemasok</TabsTrigger>
           </TabsList>
 
           {/* Stock Tab */}
@@ -79,24 +83,27 @@ export default function InventoryPage() {
 
           {/* Stock Opname Tab */}
           <TabsContent value="opname" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => setShowOpnameForm(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                New Opname
-              </Button>
+            <StockOpnameForm open={showOpnameForm} onClose={() => setShowOpnameForm(false)} />
+            
+            {/* Always show Opname History */}
+            <div className="mt-6">
+              <StockOpnameHistory onNewOpname={() => setShowOpnameForm(true)} />
             </div>
-            {showOpnameForm && <StockOpnameForm onClose={() => setShowOpnameForm(false)} />}
           </TabsContent>
 
           {/* Stock Waste Tab */}
           <TabsContent value="waste" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => setShowWasteForm(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Record Waste
-              </Button>
+            <StockWasteForm open={showWasteForm} onClose={() => setShowWasteForm(false)} />
+            
+            {/* Always show Waste History */}
+            <div className="mt-6">
+              <StockWasteHistory onNewWaste={() => setShowWasteForm(true)} />
             </div>
-            {showWasteForm && <StockWasteForm onClose={() => setShowWasteForm(false)} />}
+          </TabsContent>
+
+          {/* Stock Movement Tracker Tab */}
+          <TabsContent value="movements" className="space-y-4">
+            <StockMovementTracker />
           </TabsContent>
 
           {/* Suppliers Tab */}

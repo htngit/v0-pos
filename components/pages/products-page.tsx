@@ -33,23 +33,23 @@ export default function ProductsPage() {
       <div className="p-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Product Management</h1>
+          <h1 className="text-2xl font-bold text-foreground">Pengelolaan Produk</h1>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="products" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
+            <TabsTrigger value="products">Produk</TabsTrigger>
+            <TabsTrigger value="categories">Kategori</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="space-y-4">
             {/* Products tab header with Add Product button */}
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">Product List</h2>
+              <h2 className="text-lg font-semibold text-foreground">List Produk</h2>
               <Button onClick={handleAddProduct} className="gap-2">
                 <Plus className="w-4 h-4" />
-                Add Product
+                Tambah Produk
               </Button>
             </div>
             <ProductList onEdit={handleEditProduct} />

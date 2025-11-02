@@ -160,39 +160,24 @@ export const useNotificationStore = create<NotificationState>()(
 // Service class for notification functionality
 class NotificationService {
   /**
-   * Show a browser notification if permissions allow
-   */
-  static async showBrowserNotification(title: string, options?: NotificationOptions): Promise<void> {
-    if ('Notification' in window) {
-      // Request permission if not already granted
-      if (Notification.permission === 'granted') {
-        new Notification(title, options);
-      } else if (Notification.permission !== 'denied') {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          new Notification(title, options);
-        }
-      }
-    }
-  }
-
-  /**
    * Add a new notification
    */
   static async addNotification(
-    type: 'low_stock' | 'unpaid_transaction' | 'saved_order' | string,
+    type: 'low_stock' | 'unpaid_transaction' | 'saved_order' | 'account_update' | 'account_error' | string,
     title: string,
     message: string,
     data?: any
   ): Promise<void> {
     // Validate the type to ensure it's one of the expected values
-    const validTypes: Array<'low_stock' | 'unpaid_transaction' | 'saved_order' | string> = [
+    const validTypes: Array<'low_stock' | 'unpaid_transaction' | 'saved_order' | 'account_update' | 'account_error' | string> = [
       'low_stock',
       'unpaid_transaction',
-      'saved_order'
+      'saved_order',
+      'account_update',
+      'account_error'
     ];
     
-    const notificationType = validTypes.includes(type) ? type as 'low_stock' | 'unpaid_transaction' | 'saved_order' : 'low_stock';
+    const notificationType = validTypes.includes(type) ? type as 'low_stock' | 'unpaid_transaction' | 'saved_order' | 'account_update' | 'account_error' : 'low_stock';
     
     const { addNotification } = useNotificationStore.getState();
     await addNotification({
@@ -201,9 +186,6 @@ class NotificationService {
       message,
       data,
     });
-    
-    // Also show browser notification if possible
-    await this.showBrowserNotification(title, { body: message });
   }
 
   /**
@@ -231,16 +213,38 @@ class NotificationService {
   }
 
  /**
-   * Add a saved order notification
-   */
-  static async addSavedOrderNotification(transactionId: string, customerName: string): Promise<void> {
-    await this.addNotification(
-      'saved_order',
-      'Order Saved',
-      `Order for customer "${customerName}" has been saved successfully`,
-      { transactionId, customerName }
-    );
-  }
+  * Add a saved order notification
+  */
+ static async addSavedOrderNotification(transactionId: string, customerName: string): Promise<void> {
+   await this.addNotification(
+     'saved_order',
+     'Order Saved',
+     `Order for customer "${customerName}" has been saved successfully`,
+     { transactionId, customerName }
+   );
+ }
+
+ /**
+  * Add an account update notification
+  */
+ static async addAccountUpdateNotification(message: string): Promise<void> {
+   await this.addNotification(
+     'account_update',
+     'Account Update',
+     message
+   );
+ }
+
+ /**
+  * Add an account error notification
+  */
+ static async addAccountErrorNotification(message: string): Promise<void> {
+   await this.addNotification(
+     'account_error',
+     'Account Error',
+     message
+   );
+ }
 
   /**
    * Get all notifications
@@ -290,22 +294,6 @@ class NotificationService {
     await initialize();
   }
 
-  /**
-   * Check if browser notifications are supported
-   */
-  static isBrowserNotificationSupported(): boolean {
-    return 'Notification' in window;
-  }
-
-  /**
-   * Request browser notification permission
-   */
- static async requestBrowserNotificationPermission(): Promise<NotificationPermission> {
-    if ('Notification' in window) {
-      return await Notification.requestPermission();
-    }
-    return 'denied';
-  }
 }
 
 export { NotificationService };

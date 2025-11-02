@@ -6,6 +6,8 @@ import { SavedOrderService } from '../services/savedOrderService';
 import { CashierShiftService } from '../services/cashierShiftService';
 import { useShiftStore } from './shiftStore';
 import { useAuthStore } from './authStore';
+import { useSettingsStore } from './settingsStore';
+import { CalculationService } from '../services/calculationService';
 
 interface CartItem {
   productId: string;
@@ -119,6 +121,13 @@ export const useCashierStore = create<CashierState>((set, get) => ({
    const discount = get().calculateDiscount();
    const total = subtotal + tax - discount;
 
+   // Get tax settings for proper database storage
+   const taxSettings = useSettingsStore.getState().getSetting('tax') || {
+     taxEnabled: true,
+     taxRate: 10,
+     taxTiming: 'after_discount'
+   };
+
    // Create transaction object using the new service
            const { currentShiftId } = useShiftStore.getState();
            const transactionData: Omit<Transaction, 'id' | 'transactionNumber' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'paidAt'> = {
@@ -133,7 +142,11 @@ export const useCashierStore = create<CashierState>((set, get) => ({
              })),
              subtotal,
              discount: { type: 'nominal', value: 0, amount: discount },
-             tax: { enabled: true, rate: 0, amount: tax },
+             tax: {
+               enabled: taxSettings.taxEnabled,
+               rate: taxSettings.taxRate,
+               amount: tax
+             },
              total,
              payments: [],
              change: 0,
@@ -190,9 +203,22 @@ export const useCashierStore = create<CashierState>((set, get) => ({
   },
   
   calculateTax: () => {
-    // For now, using a simple 10% tax - this would be configurable in real app
+    // Get tax settings from settings store
+    const taxSettings = useSettingsStore.getState().getSetting('tax');
+    
+    if (!taxSettings || !taxSettings.taxEnabled) {
+      return 0;
+    }
+    
     const subtotal = get().calculateSubtotal();
-    return subtotal * 0.1; // 10% tax
+    const discountAmount = get().calculateDiscount();
+    
+    // Use CalculationService with proper tax timing
+    return CalculationService.calculateTax(subtotal, discountAmount, {
+      enabled: taxSettings.taxEnabled,
+      rate: taxSettings.taxRate,
+      timing: taxSettings.taxTiming
+    });
   },
   
  calculateDiscount: () => {
@@ -222,6 +248,13 @@ export const useCashierStore = create<CashierState>((set, get) => ({
     const tax = get().calculateTax();
     const discount = get().calculateDiscount();
     const total = subtotal + tax - discount;
+    
+    // Get tax settings for proper database storage
+    const taxSettings = useSettingsStore.getState().getSetting('tax') || {
+      taxEnabled: true,
+      taxRate: 10,
+      taxTiming: 'after_discount'
+    };
     
     // Map payment method to allowed types
     const paymentMethod: 'cash' | 'ewallet' | 'qris' =
@@ -268,7 +301,11 @@ export const useCashierStore = create<CashierState>((set, get) => ({
           })),
           subtotal,
           discount: { type: 'nominal', value: 0, amount: discount },
-          tax: { enabled: true, rate: 0, amount: tax },
+          tax: {
+            enabled: taxSettings.taxEnabled,
+            rate: taxSettings.taxRate,
+            amount: tax
+          },
           total,
           payments: [],
           change: 0,

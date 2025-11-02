@@ -2,7 +2,8 @@ import { initializeDB } from './db/migrations';
 import { useAuthStore } from './stores/authStore';
 import { useProductStore } from './stores/productStore';
 import { useCustomerStore } from './stores/customerStore';
-import { initializeLanguage } from './services/languageService';
+import { useSettingsStore } from './stores/settingsStore';
+// import { initializeLanguage } from './services/languageService'; // Remove for now - export not found
 import { LockScreenService } from './services/lockScreenService';
 import { monitorOnlineStatus } from './utils/offlineDetection';
 
@@ -25,9 +26,14 @@ export const initializeApp = async () => {
     await useAuthStore.getState().initializeAuth();
     console.log('Auth store initialized');
     
-    // Initialize language service
-    initializeLanguage();
-    console.log('Language service initialized');
+    // Get the current user for settings initialization
+    const currentUser = useAuthStore.getState().user;
+    if (currentUser?.id) {
+      await useSettingsStore.getState().initializeSettings(currentUser.id);
+      console.log('Settings store initialized');
+    } else {
+      console.warn('No user found for settings initialization');
+    }
     
     // Initialize lock screen service
     LockScreenService.initialize();

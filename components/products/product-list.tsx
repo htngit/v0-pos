@@ -75,7 +75,7 @@ export default function ProductList({ onEdit }: ProductListProps) {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or SKU..."
+              placeholder="Cari berdasarkan nama atau SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-8 text-sm"
@@ -88,13 +88,13 @@ export default function ProductList({ onEdit }: ProductListProps) {
         <Table>
           <TableHeader className="bg-muted/50 sticky top-0">
             <TableRow className="hover:bg-transparent border-b border-border">
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Product</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Produk</TableHead>
               <TableHead className="h-8 px-3 py-1 text-xs font-semibold">SKU</TableHead>
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Type</TableHead>
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Price</TableHead>
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Cost</TableHead>
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Stock</TableHead>
-              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Actions</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold">Tipe</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Harga</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Modal</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Stok</TableHead>
+              <TableHead className="h-8 px-3 py-1 text-xs font-semibold text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

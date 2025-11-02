@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { useShiftStore } from "@/lib/stores/shiftStore";
+import { useNotificationStore } from "@/lib/services/notificationService";
 import { format } from "date-fns";
 
 export default function CashierHeader() {
@@ -20,6 +21,7 @@ export default function CashierHeader() {
   const [isOnline, setIsOnline] = useState(true);
   const { user, logout } = useAuthStore();
   const { getCurrentShift } = useShiftStore();
+  const { unreadCount } = useNotificationStore();
   const [shiftData, setShiftData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -102,7 +104,11 @@ export default function CashierHeader() {
             className="relative"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </Button>
           {showNotifications && <NotificationPanel />}
         </div>
